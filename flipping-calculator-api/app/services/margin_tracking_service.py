@@ -56,6 +56,9 @@ class MarginTrackingService:
             low = point.get('price_low')
             
             if high and low and low > 0:
+                # Based on correct mapping:
+                # sell_price = price_high
+                # buy_price = price_low
                 spread = high - low
                 margin_percent = (spread / low) * 100
                 
