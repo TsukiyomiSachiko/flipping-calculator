@@ -36,8 +36,8 @@ class FlipService:
                 continue
             
             price_data = latest_data['data'][item_id]
-            buy_price = price_data.get('high')  # Flipper's buy price (Wiki "high")
-            sell_price = price_data.get('low')  # Flipper's sell price (Wiki "low")
+            buy_price = price_data.get('low')  # Flipper's buy price (Wiki "low")
+            sell_price = price_data.get('high')  # Flipper's sell price (Wiki "high")
             
             if not buy_price or not sell_price:
                 continue
