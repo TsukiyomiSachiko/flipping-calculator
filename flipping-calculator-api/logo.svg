@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#4A148C" stroke="#7B1FA2" stroke-width="4"/>
+  
+  <!-- Inner circle -->
+  <circle cx="100" cy="100" r="80" fill="#6A1B9A" stroke="#9C27B0" stroke-width="2"/>
+  
+  <!-- Gold coin stack (left) - 3 coins -->
+  <ellipse cx="70" cy="110" rx="22" ry="8" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="70" cy="105" rx="22" ry="8" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="70" cy="100" rx="22" ry="8" fill="#FFED4E" stroke="#B8860B" stroke-width="2"/>
+  
+  <!-- Gold coin stack (right) - 6 coins (bigger stack = profit) -->
+  <ellipse cx="130" cy="110" rx="22" ry="8" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="130" cy="105" rx="22" ry="8" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="130" cy="100" rx="22" ry="8" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="130" cy="95" rx="22" ry="8" fill="#FFED4E" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="130" cy="90" rx="22" ry="8" fill="#FFED4E" stroke="#B8860B" stroke-width="2"/>
+  <ellipse cx="130" cy="85" rx="22" ry="8" fill="#FFED4E" stroke="#B8860B" stroke-width="2"/>
+  
+  <!-- Text: Flipping Calculator -->
+  <text x="100" y="150" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFED4E" text-anchor="middle" stroke="#B8860B" stroke-width="0.8">Flipping Calculator</text>
+  
+  <!-- Decorative sparkles -->
+  <circle cx="50" cy="60" r="3" fill="#FFED4E" opacity="0.8"/>
+  <circle cx="150" cy="60" r="3" fill="#FFED4E" opacity="0.8"/>
+  <circle cx="40" cy="140" r="2" fill="#FFED4E" opacity="0.6"/>
+  <circle cx="160" cy="130" r="2" fill="#FFED4E" opacity="0.6"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="#4A148C"/>
+  
+  <!-- Gold coins simplified -->
+  <!-- Left stack - 2 coins -->
+  <ellipse cx="22" cy="36" rx="11" ry="4" fill="#FFD700" stroke="#B8860B" stroke-width="1.5"/>
+  <ellipse cx="22" cy="32" rx="11" ry="4" fill="#FFED4E" stroke="#B8860B" stroke-width="1.5"/>
+  
+  <!-- Right stack - 4 coins (bigger = profit) -->
+  <ellipse cx="42" cy="36" rx="11" ry="4" fill="#FFD700" stroke="#B8860B" stroke-width="1.5"/>
+  <ellipse cx="42" cy="32" rx="11" ry="4" fill="#FFD700" stroke="#B8860B" stroke-width="1.5"/>
+  <ellipse cx="42" cy="28" rx="11" ry="4" fill="#FFED4E" stroke="#B8860B" stroke-width="1.5"/>
+  <ellipse cx="42" cy="24" rx="11" ry="4" fill="#FFED4E" stroke="#B8860B" stroke-width="1.5"/>
+  
+  <!-- Text removed for clarity at small size -->
+</svg>
