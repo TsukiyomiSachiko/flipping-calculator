@@ -231,6 +231,70 @@ class ItemService:
         score = profit_coeff * math.log10(volume + 1)
 
         return round(score, 1)
+
+    @staticmethod
+    def calculate_long_term_score(
+        profit: int,
+        roi: float,
+        volume: int,
+        trajectory: Optional[float],
+        volatility: Optional[float],
+    ) -> float:
+        """
+        Calculate a score designed for 3-14 day holds.
+        
+        Weighting:
+          - Trajectory (40%): Rewards steady growth, penalizes negative trends heavily.
+          - Volatility (Penalty up to -100): Subtracts points for high volatility.
+          - ROI (40%): Baseline profit check.
+          - Volume (20%): Needs to be liquid enough to eventually sell.
+          
+        Guards:
+          - If volume < 1000 (per day/hour depending on metric): score is heavily reduced.
+          - If trajectory is < -5%: score is 0.
+        """
+        if profit <= 0 or volume <= 0:
+            return 0.0
+            
+        # --- Trajectory Score (0-100) ---
+        if trajectory is not None:
+            if trajectory <= -5.0:
+                # Catching falling knives is bad for passive holding
+                return 0.0
+            elif trajectory <= 0.0:
+                # Slight dip or flat
+                traj_score = 30 + ((trajectory + 5.0) / 5.0) * 20
+            elif trajectory <= 15.0:
+                # Steady climb (0 to +15%)
+                traj_score = 50 + (trajectory / 15.0) * 50
+            else:
+                # Over 15%: Might be a pump and dump, cap it
+                traj_score = 100
+        else:
+            traj_score = 50  # Neutral if unknown
+
+        # --- Volatility Penalty (0 to 100 subtracted) ---
+        # A stable item has ~1-2% volatility. >5% is very chaotic.
+        vol_penalty = 0
+        if volatility is not None:
+            if volatility > 2.0:
+                # For every 1% above 2%, subtract 20 points, up to 100
+                vol_penalty = min(100, (volatility - 2.0) * 20)
+                
+        # --- ROI Score (0-100) ---
+        roi_score = min(100, (math.log10(max(roi, 0.1) + 1) / math.log10(26)) * 100)
+        
+        # --- Volume Score (0-100) ---
+        vol_score = min(100, (math.log10(volume) / math.log10(1_000_000)) * 100)
+        
+        # --- Weighted Total ---
+        score = (
+            traj_score * 0.40 +
+            roi_score * 0.40 +
+            vol_score * 0.20
+        ) - vol_penalty
+        
+        return round(min(100, max(0, score)), 1)
     @staticmethod
     def sync_items_from_api(force_update: bool = False):
         """

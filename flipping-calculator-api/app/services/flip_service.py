@@ -140,6 +140,10 @@ class FlipService:
                 vol_5m = volume_5m_data['data'][item_id]
                 volume_5m = (vol_5m.get('highPriceVolume', 0) or 0) + (vol_5m.get('lowPriceVolume', 0) or 0)
 
+            # Get long-term metrics
+            trajectory = DataQualityService.get_historical_trajectory(item['id'])
+            volatility = DataQualityService.get_historical_volatility(item['id'])
+
             profitable_items.append({
                 "id": item['id'],
                 "name": item['name'],
@@ -166,6 +170,15 @@ class FlipService:
                     volume_5m=volume_5m,
                     volume_1h=volume,
                 ),
+                "long_term_score": ItemService.calculate_long_term_score(
+                    profit=profit,
+                    roi=roi,
+                    volume=volume,
+                    trajectory=trajectory,
+                    volatility=volatility,
+                ),
+                "trajectory": trajectory,
+                "volatility": volatility,
                 "price_change_pct": 0,  # Needed for quality check (will be enriched if momentum available)
             })
         
@@ -207,6 +220,10 @@ class FlipService:
             profitable_items.sort(key=lambda x: x['score'], reverse=True)
         elif sort_by == 'erebus':
             profitable_items.sort(key=lambda x: (x['secondary_score'] is not None, x['secondary_score'] or 0), reverse=True)
+        elif sort_by == 'long_term':
+            # Filter out bad long term scores first
+            profitable_items = [item for item in profitable_items if item['long_term_score'] > 0]
+            profitable_items.sort(key=lambda x: x['long_term_score'], reverse=True)
         elif sort_by == 'quality':
             profitable_items.sort(key=lambda x: (x.get('quality_score') is not None, x.get('quality_score') or 0), reverse=True)
         

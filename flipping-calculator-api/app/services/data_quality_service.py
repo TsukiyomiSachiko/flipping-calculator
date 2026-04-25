@@ -35,6 +35,7 @@ class DataQualityService:
     # In-memory TTL Cache
     _volatility_cache: Dict[int, float] = {}
     _stability_cache: Dict[int, float] = {}
+    _trajectory_cache: Dict[int, float] = {}
     _cache_timestamp: Optional[datetime] = None
     CACHE_TTL_HOURS = 1
 
@@ -428,6 +429,21 @@ class DataQualityService:
         return enriched_items
 
     @classmethod
+    def get_historical_volatility(cls, item_id: int) -> Optional[float]:
+        """Get the cached 7-day volatility for an item."""
+        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
+            return cls._volatility_cache.get(item_id)
+        # Fallback if cache is missed
+        return cls._calculate_historical_volatility(item_id)
+
+    @classmethod
+    def get_historical_trajectory(cls, item_id: int) -> Optional[float]:
+        """Get the cached 7-day trajectory percentage for an item."""
+        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
+            return cls._trajectory_cache.get(item_id)
+        return None
+
+    @classmethod
     def prewarm_cache(cls):
         """
         Precalculate and cache historical metrics for all items.
@@ -441,6 +457,7 @@ class DataQualityService:
             
             new_volatility = {}
             new_stability = {}
+            new_trajectory = {}
             
             day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
             upper_bound = day_ago + timedelta(hours=2)
@@ -478,8 +495,19 @@ class DataQualityService:
                                 pct_change = ((curr_mid - prev_mid) / prev_mid) * 100
                                 changes.append(pct_change)
                         
+                        
                         if len(changes) >= 20:
                             new_volatility[item_id] = stdev(changes)
+                            
+                        # Calculate Trajectory
+                        first_valid = next((r for r in rows if r['price_high'] is not None and r['price_low'] is not None), None)
+                        last_valid = next((r for r in reversed(rows) if r['price_high'] is not None and r['price_low'] is not None), None)
+                        
+                        if first_valid and last_valid:
+                            start_mid = (first_valid['price_high'] + first_valid['price_low']) / 2
+                            end_mid = (last_valid['price_high'] + last_valid['price_low']) / 2
+                            if start_mid > 0:
+                                new_trajectory[item_id] = ((end_mid - start_mid) / start_mid) * 100
                     
                     # 2. Precalculate Stability Baseline
                     cursor.execute('''
@@ -501,9 +529,10 @@ class DataQualityService:
             # Atomically swap caches
             cls._volatility_cache = new_volatility
             cls._stability_cache = new_stability
+            cls._trajectory_cache = new_trajectory
             cls._cache_timestamp = datetime.now(timezone.utc)
             
-            logger.info(f"✅ DataQualityService cache pre-warmed. Volatility: {len(new_volatility)} items, Stability: {len(new_stability)} items.")
+            logger.info(f"✅ DataQualityService cache pre-warmed. Volatility: {len(new_volatility)} items, Stability: {len(new_stability)} items, Trajectory: {len(new_trajectory)} items.")
             
         except Exception as e:
             logger.error(f"Failed to pre-warm DataQualityService cache: {e}", exc_info=True)
