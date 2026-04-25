@@ -51,8 +51,8 @@ class TrajectoryService:
         # Sort by timestamp ascending
         valid.sort(key=lambda x: x['timestamp'])
 
-        buy_prices = [dp['avgHighPrice'] for dp in valid]
-        sell_prices = [dp['avgLowPrice'] for dp in valid]
+        buy_prices = [dp['avgLowPrice'] for dp in valid]
+        sell_prices = [dp['avgHighPrice'] for dp in valid]
         timestamps = [dp['timestamp'] for dp in valid]
         midpoints = [(b + s) / 2 for b, s in zip(buy_prices, sell_prices)]
 
@@ -83,8 +83,8 @@ class TrajectoryService:
         for i, dp in enumerate(valid):
             history.append({
                 'timestamp': dp['timestamp'],
-                'buyPrice': dp['avgHighPrice'],
-                'sellPrice': dp['avgLowPrice'],
+                'buyPrice': dp['avgLowPrice'],
+                'sellPrice': dp['avgHighPrice'],
                 'smoothed': round(smoothed[i]),
             })
 

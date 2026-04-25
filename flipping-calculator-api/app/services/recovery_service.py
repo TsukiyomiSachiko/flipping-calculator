@@ -51,10 +51,10 @@ class RecoveryAnalysisService:
         # Sort by timestamp ascending
         valid.sort(key=lambda x: x['timestamp'])
 
-        # Extract sell prices (avgLowPrice = what the flipper sells at in our system)
+        # Extract sell prices (avgHighPrice = what the flipper sells at in our system)
         # and buy prices for spread analysis
-        sell_prices = [dp['avgLowPrice'] for dp in valid]
-        buy_prices = [dp['avgHighPrice'] for dp in valid]
+        sell_prices = [dp['avgHighPrice'] for dp in valid]
+        buy_prices = [dp['avgLowPrice'] for dp in valid]
         volumes = [
             (dp.get('highPriceVolume', 0) or 0) + (dp.get('lowPriceVolume', 0) or 0)
             for dp in valid

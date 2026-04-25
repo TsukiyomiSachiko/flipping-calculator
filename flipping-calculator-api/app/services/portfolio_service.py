@@ -505,8 +505,8 @@ class PortfolioService:
             current_volume = None
             if item_id_str in latest_data.get('data', {}):
                 price_data = latest_data['data'][item_id_str]
-                current_buy_price = price_data.get('high')
-                current_sell_price = price_data.get('low')
+                current_buy_price = price_data.get('low')
+                current_sell_price = price_data.get('high')
                 if current_sell_price:
                     ge_tax = calculate_ge_tax(current_sell_price)
                     net_sell = current_sell_price - ge_tax

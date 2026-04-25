@@ -386,8 +386,8 @@ class ItemService:
         sell_price = None
         if item_id_str in latest_data.get('data', {}):
             price_data = latest_data['data'][item_id_str]
-            buy_price = price_data.get('high')
-            sell_price = price_data.get('low')
+            buy_price = price_data.get('low')
+            sell_price = price_data.get('high')
 
         # Get 1h volume
         volume = 0

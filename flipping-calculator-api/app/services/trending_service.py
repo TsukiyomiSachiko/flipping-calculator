@@ -54,8 +54,8 @@ class TrendingService:
 
             item = items[item_id_str]
 
-            buy_now = price_data.get('high')
-            sell_now = price_data.get('low')
+            buy_now = price_data.get('low')
+            sell_now = price_data.get('high')
             if not buy_now or not sell_now or buy_now <= 0 or sell_now <= 0:
                 continue
 
