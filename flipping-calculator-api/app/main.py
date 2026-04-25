@@ -5,6 +5,7 @@ from app.routes import items, portfolio, flips, price_history, trajectory, price
 from app.utils.database import init_database
 from app.services.price_polling_service import price_polling_service
 from app.services.data_compression_service import data_compression_service
+from app.services.data_quality_prewarmer_service import data_quality_prewarmer_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ async def lifespan(app):
     logger.info("Starting background services...")
     await price_polling_service.start()
     await data_compression_service.start()
+    await data_quality_prewarmer_service.start()
     
     yield
     
@@ -25,6 +27,7 @@ async def lifespan(app):
     logger.info("Shutting down background services...")
     await price_polling_service.stop()
     await data_compression_service.stop()
+    await data_quality_prewarmer_service.stop()
 
 app = FastAPI(
     title="OSRS Flipping Calculator API",
