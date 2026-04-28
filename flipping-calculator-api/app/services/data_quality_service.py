@@ -249,6 +249,51 @@ class DataQualityService:
             return 75, None
         else:
             return 100, None
+            
+    @classmethod
+    def _calculate_trend_trajectory(cls, rows: List[Dict]) -> Optional[float]:
+        """
+        Calculate price trajectory using Ordinary Least Squares linear regression.
+        Returns the percentage growth of the trend line over the time window.
+        """
+        valid_points = []
+        if not rows:
+            return None
+            
+        for i, r in enumerate(rows):
+            if r['price_high'] is not None and r['price_low'] is not None:
+                mid = (r['price_high'] + r['price_low']) / 2.0
+                if mid > 0:
+                    valid_points.append((i, mid))
+                    
+        n = len(valid_points)
+        if n < 24:  # require at least 24 valid data points
+            return None
+            
+        sum_x = sum(x for x, y in valid_points)
+        sum_y = sum(y for x, y in valid_points)
+        sum_xy = sum(x * y for x, y in valid_points)
+        sum_x2 = sum(x * x for x, y in valid_points)
+        
+        denominator = n * sum_x2 - sum_x * sum_x
+        if denominator == 0:
+            return 0.0  # completely flat
+            
+        m = (n * sum_xy - sum_x * sum_y) / denominator
+        b = (sum_y - m * sum_x) / n
+        
+        # Trajectory percentage growth from start to end of trend line
+        start_x = valid_points[0][0]
+        end_x = valid_points[-1][0]
+        
+        start_trend_price = m * start_x + b
+        end_trend_price = m * end_x + b
+        
+        if start_trend_price <= 0:
+            return 0.0
+            
+        trajectory_pct = ((end_trend_price - start_trend_price) / start_trend_price) * 100
+        return trajectory_pct
     
     @classmethod
     def _calculate_historical_volatility(
@@ -499,15 +544,10 @@ class DataQualityService:
                         if len(changes) >= 20:
                             new_volatility[item_id] = stdev(changes)
                             
-                        # Calculate Trajectory
-                        first_valid = next((r for r in rows if r['price_high'] is not None and r['price_low'] is not None), None)
-                        last_valid = next((r for r in reversed(rows) if r['price_high'] is not None and r['price_low'] is not None), None)
-                        
-                        if first_valid and last_valid:
-                            start_mid = (first_valid['price_high'] + first_valid['price_low']) / 2
-                            end_mid = (last_valid['price_high'] + last_valid['price_low']) / 2
-                            if start_mid > 0:
-                                new_trajectory[item_id] = ((end_mid - start_mid) / start_mid) * 100
+                        # Calculate Trajectory using Linear Regression
+                        traj = cls._calculate_trend_trajectory(rows)
+                        if traj is not None:
+                            new_trajectory[item_id] = traj
                     
                     # 2. Precalculate Stability Baseline
                     cursor.execute('''
