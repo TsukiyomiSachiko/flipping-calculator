@@ -282,22 +282,21 @@ class DataQualityService:
         m = (n * sum_xy - sum_x * sum_y) / denominator
         b = (sum_y - m * sum_x) / n
         
-        # Trajectory percentage growth from start to end of trend line
-        start_x = valid_points[0][0]
-        end_x = valid_points[-1][0]
+        # Calculate expected growth over the next 7 days (168 hours)
+        current_x = valid_points[-1][0]
         
-        start_trend_price = m * start_x + b
-        end_trend_price = m * end_x + b
+        current_trend_price = m * current_x + b
+        future_trend_price = m * (current_x + 168) + b
         
-        if start_trend_price <= 0:
+        if current_trend_price <= 0:
             return 0.0
             
-        trajectory_pct = ((end_trend_price - start_trend_price) / start_trend_price) * 100
+        trajectory_pct = ((future_trend_price - current_trend_price) / current_trend_price) * 100
         return trajectory_pct
     
     @classmethod
     def _calculate_historical_volatility(
-        cls, item_id: int, days: int = 7
+        cls, item_id: int, days: int = 30
     ) -> Optional[float]:
         """
         Calculate standard deviation of hourly price changes over past N days.
@@ -506,21 +505,21 @@ class DataQualityService:
             
             day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
             upper_bound = day_ago + timedelta(hours=2)
-            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+            month_ago = datetime.now(timezone.utc) - timedelta(days=30)
             
             with get_db() as conn:
                 cursor = conn.cursor()
                 for item in items:
                     item_id = item['id']
                     
-                    # 1. Precalculate Volatility
+                    # 1. Precalculate Volatility and Trajectory (using 30 days)
                     cursor.execute('''
                         SELECT timestamp, price_high, price_low
                         FROM price_history
                         WHERE item_id = ?
                         AND timestamp >= ?
                         ORDER BY timestamp ASC
-                    ''', (item_id, week_ago))
+                    ''', (item_id, month_ago))
                     rows = cursor.fetchall()
                     if len(rows) >= 24:
                         changes = []
