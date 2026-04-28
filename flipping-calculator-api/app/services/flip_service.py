@@ -151,11 +151,6 @@ class FlipService:
             if trajectory is not None:
                 expected_sell_price = int(sell_price * (1 + trajectory / 100))
                 
-                # Cap at high alchemy value if it exists, as items rarely go above it
-                highalch = item.get('highalch')
-                if highalch and highalch > 0:
-                    expected_sell_price = min(expected_sell_price, highalch)
-                
                 tax = calculate_ge_tax(expected_sell_price)
                 expected_profit_7d = expected_sell_price - buy_price - tax
                 if buy_price > 0:
