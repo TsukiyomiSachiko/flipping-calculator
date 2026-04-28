@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import FlipsView from './pages/FlipsView';
+import LongTermFlipsView from './pages/LongTermFlipsView';
 import PortfolioView from './pages/PortfolioView';
 import HistoryView from './pages/HistoryView';
 import StatsView from './pages/StatsView';
@@ -82,6 +83,7 @@ function App() {
 
         {/* Main Content */}
         {activeView === 'flips' && <FlipsView />}
+        {activeView === 'longterm' && <LongTermFlipsView />}
         {activeView === 'conversions' && <ConversionsView />}
         {activeView === 'portfolio' && <PortfolioView />}
         {activeView === 'history' && <HistoryView />}

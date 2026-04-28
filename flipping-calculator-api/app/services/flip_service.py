@@ -1,7 +1,7 @@
 from typing import List, Dict
 from app.utils.database import get_db
 from app.utils.api_client import fetch_latest_prices, fetch_volume_data, fetch_5m_volume_data
-from app.services.item_service import ItemService
+from app.services.item_service import ItemService, calculate_ge_tax
 from app.services.data_quality_service import DataQualityService
 from app.services.settings_service import SettingsService
 
@@ -144,6 +144,19 @@ class FlipService:
             trajectory = DataQualityService.get_historical_trajectory(item['id'])
             volatility = DataQualityService.get_historical_volatility(item['id'])
 
+            expected_profit_7d = None
+            expected_roi_7d = None
+            expected_sell_price = None
+
+            if trajectory is not None:
+                expected_sell_price = int(sell_price * (1 + trajectory / 100))
+                tax = calculate_ge_tax(expected_sell_price)
+                expected_profit_7d = expected_sell_price - buy_price - tax
+                if buy_price > 0:
+                    expected_roi_7d = round((expected_profit_7d / buy_price) * 100, 2)
+                else:
+                    expected_roi_7d = 0.0
+
             profitable_items.append({
                 "id": item['id'],
                 "name": item['name'],
@@ -179,6 +192,9 @@ class FlipService:
                 ),
                 "trajectory": trajectory,
                 "volatility": volatility,
+                "expected_sell_price": expected_sell_price,
+                "expected_profit_7d": expected_profit_7d,
+                "expected_roi_7d": expected_roi_7d,
                 "price_change_pct": 0,  # Needed for quality check (will be enriched if momentum available)
             })
         

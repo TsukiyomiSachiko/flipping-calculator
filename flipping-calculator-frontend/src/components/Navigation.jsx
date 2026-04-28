@@ -12,6 +12,7 @@ export default function Navigation() {
 
   const tabs = [
     { id: 'flips', label: 'Find Flips', shortLabel: 'Flips', icon: '🔍' },
+    { id: 'longterm', label: 'Long Term', shortLabel: 'LongTerm', icon: '📅' },
     { id: 'conversions', label: 'Conversions', shortLabel: 'Convs', icon: '🛠️' },
     { id: 'portfolio', label: 'Portfolio', shortLabel: 'Portfolio', icon: '💼' },
     { id: 'history', label: 'History', shortLabel: 'History', icon: '📜' },
