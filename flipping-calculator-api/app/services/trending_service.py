@@ -1,6 +1,6 @@
 import math
 from typing import List, Dict, Optional
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 from app.utils.api_client import fetch_latest_prices, fetch_volume_data, fetch_5m_volume_data
 from app.services.item_service import ItemService
 from app.services.data_quality_service import DataQualityService
@@ -41,10 +41,9 @@ class TrendingService:
         volume_1h_data = fetch_volume_data(use_cache=True)
         volume_5m_data = fetch_5m_volume_data(use_cache=True)
 
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM items')
-            items = {str(row['id']): dict(row) for row in cursor.fetchall()}
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM items')
+            items = {str(row['id']): dict(row) for row in _res.mappings().fetchall()}
 
         candidates = []
 

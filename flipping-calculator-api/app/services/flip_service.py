@@ -1,5 +1,5 @@
 from typing import List, Dict
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 from app.utils.api_client import fetch_latest_prices, fetch_volume_data, fetch_5m_volume_data
 from app.services.item_service import ItemService, calculate_ge_tax
 from app.services.data_quality_service import DataQualityService
@@ -20,10 +20,9 @@ class FlipService:
         volume_5m_data = fetch_5m_volume_data(use_cache=True)
         
         # Get all items from database
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM items')
-            items = [dict(row) for row in cursor.fetchall()]
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM items')
+            items = [dict(row) for row in _res.mappings().fetchall()]
         
         # Merge price and volume data
         profitable_items = []
@@ -254,10 +253,9 @@ class FlipService:
         latest_data = fetch_latest_prices(use_cache=True)
         volume_data = fetch_volume_data(use_cache=True)
         
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT COUNT(*) as count FROM items')
-            total_items = cursor.fetchone()['count']
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT COUNT(*) as count FROM items')
+            total_items = _res.mappings().fetchone()['count']
         
         items_with_prices = len(latest_data.get('data', {}))
         items_with_volume = len(volume_data.get('data', {})) if volume_data else 0

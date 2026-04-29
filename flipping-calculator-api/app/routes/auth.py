@@ -1,7 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 from app.utils.security import (
     verify_password,
     get_password_hash,
@@ -24,10 +24,9 @@ class AccountRegister(BaseModel):
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, name, password_hash FROM accounts WHERE name = ?", (form_data.username,))
-        user = cursor.fetchone()
+    with get_db() as session:
+        _res = execute_query(session, "SELECT id, name, password_hash FROM accounts WHERE name = ?", (form_data.username,))
+        user = _res.mappings().fetchone()
         
     if not user or not user["password_hash"] or not verify_password(form_data.password, user["password_hash"]):
         raise HTTPException(
@@ -46,26 +45,25 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def register(account: AccountRegister):
     hashed_password = get_password_hash(account.password)
     
-    with get_db() as conn:
-        cursor = conn.cursor()
+    with get_db() as session:
         try:
-            cursor.execute(
+            _res = execute_query(session,
                 "INSERT INTO accounts (name, password_hash) VALUES (?, ?)", 
                 (account.name, hashed_password)
             )
-            account_id = cursor.lastrowid
+            account_id = _res.scalar()
             
             # If lastrowid is None (e.g. Postgres sometimes needs explicit RETURNING fetch), check cursor implementation
             # The CursorWrapper implementation handles RETURNING id, but let's be safe
             if not account_id:
-                cursor.execute("SELECT id FROM accounts WHERE name = ?", (account.name,))
-                account_id = cursor.fetchone()['id']
+                _res = execute_query(session, "SELECT id FROM accounts WHERE name = ?", (account.name,))
+                account_id = _res.mappings().fetchone()['id']
 
-            conn.commit()
+            session.commit()
             
             # Initialize settings
-            cursor.execute("INSERT INTO user_settings (account_id) VALUES (?)", (account_id,))
-            conn.commit()
+            _res = execute_query(session, "INSERT INTO user_settings (account_id) VALUES (?)", (account_id,))
+            session.commit()
 
         except Exception as e:
             if "UNIQUE" in str(e).upper():

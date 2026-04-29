@@ -10,7 +10,7 @@ Analyzes volume patterns from price_history to help users understand:
 
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 import statistics
 
 
@@ -32,12 +32,11 @@ class LiquidityService:
             - avg_fill_time_minutes: Estimated time to fill
             - volume_distribution: Hourly volume breakdown
         """
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             # Get volume data for the time window
             cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT 
                     timestamp,
                     volume_high + volume_low as total_volume
@@ -46,7 +45,7 @@ class LiquidityService:
                 ORDER BY timestamp ASC
             ''', (item_id, cutoff))
             
-            rows = cursor.fetchall()
+            rows = _res.mappings().fetchall()
             
         if not rows or len(rows) < 10:
             return {

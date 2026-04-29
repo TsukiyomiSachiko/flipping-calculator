@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import text, create_engine
+from app.utils.database import execute_query, text
 from sqlalchemy.orm import sessionmaker
 import os
 import sys
@@ -41,14 +42,14 @@ def setup_test_db():
     init_database()
     
     # Create default test account if it doesn't exist
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO accounts (name) VALUES ('TestAccount') ON CONFLICT (name) DO NOTHING")
-        cursor.execute("SELECT id FROM accounts WHERE name = 'TestAccount'")
-        account_id = cursor.fetchone()['id']
+    with get_db() as session:
+
+        session.execute(text("INSERT INTO accounts (name) VALUES ('TestAccount') ON CONFLICT (name) DO NOTHING"))
+        result = session.execute(text("SELECT id FROM accounts WHERE name = 'TestAccount'"))
+        account_id = result.mappings().fetchone()['id']
         # Initialize settings for test account
-        cursor.execute("INSERT INTO user_settings (account_id, available_cash) VALUES (?, 1000000000) ON CONFLICT (account_id) DO NOTHING", (account_id,))
-        conn.commit()
+        execute_query(session, "INSERT INTO user_settings (account_id, available_cash) VALUES (?, 1000000000) ON CONFLICT (account_id) DO NOTHING", (account_id,))
+        session.commit()
     
     yield
     
@@ -69,19 +70,25 @@ def setup_test_db():
 
 @pytest.fixture(scope="session")
 def account_id(setup_test_db):
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO accounts (name) VALUES ('QueenieTsuki') ON CONFLICT (name) DO NOTHING")
-        cursor.execute("SELECT id FROM accounts WHERE name = 'QueenieTsuki'")
-        acc_id = cursor.fetchone()['id']
+    with get_db() as session:
+
+        session.execute(text("INSERT INTO accounts (name) VALUES ('QueenieTsuki') ON CONFLICT (name) DO NOTHING"))
+        result = session.execute(text("SELECT id FROM accounts WHERE name = 'QueenieTsuki'"))
+        acc_id = result.mappings().fetchone()['id']
         # Give some starting cash for tests
-        cursor.execute("INSERT INTO user_settings (account_id, available_cash) VALUES (?, 100000000) ON CONFLICT (account_id) DO NOTHING", (acc_id,))
-        conn.commit()
+        execute_query(session, "UPDATE user_settings SET available_cash = 100000000 WHERE account_id = ?", (acc_id,))
+        session.commit()
         return acc_id
 
 @pytest.fixture
 def auth_header(account_id):
-    return {"X-Account-Id": str(account_id)}
+    from app.utils.security import create_access_token
+    from datetime import timedelta
+    access_token = create_access_token(
+        data={"sub": "QueenieTsuki", "id": account_id},
+        expires_delta=timedelta(minutes=30)
+    )
+    return {'Authorization': f'Bearer {access_token}'}
 
 @pytest.fixture(scope="session")
 def synced_items(setup_test_db):

@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 import logging
 from datetime import datetime, timezone
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 from app.utils.api_client import fetch_latest_prices, fetch_volume_data
 from app.utils.wiki_scraper import WikiScraper
 from app.services.item_service import calculate_ge_tax
@@ -15,8 +15,7 @@ class ConversionService:
         scraper = WikiScraper()
         methods = scraper.scrape_processing_methods()
         
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             # Use a transaction for the entire sync
             try:
@@ -25,8 +24,8 @@ class ConversionService:
                 # However, for now, let's keep it simple.
                 
                 # 1. Get existing conversions to match by name
-                cursor.execute("SELECT id, name FROM item_conversions")
-                existing = {row["name"]: row["id"] for row in cursor.fetchall()}
+                _res = execute_query(session, "SELECT id, name FROM item_conversions")
+                existing = {row["name"]: row["id"] for row in _res.mappings().fetchall()}
                 
                 new_count = 0
                 updated_count = 0
@@ -38,7 +37,7 @@ class ConversionService:
                     if name in existing:
                         # Update
                         conv_id = existing[name]
-                        cursor.execute('''
+                        _res = execute_query(session, '''
                             UPDATE item_conversions SET
                                 category = ?,
                                 conversion_rate_per_hour = ?,
@@ -59,11 +58,11 @@ class ConversionService:
                             conv_id
                         ))
                         # Clear old items
-                        cursor.execute("DELETE FROM conversion_items WHERE conversion_id = ?", (conv_id,))
+                        _res = execute_query(session, "DELETE FROM conversion_items WHERE conversion_id = ?", (conv_id,))
                         updated_count += 1
                     else:
                         # Insert
-                        cursor.execute('''
+                        _res = execute_query(session, '''
                             INSERT INTO item_conversions 
                             (name, category, conversion_rate_per_hour, skill_required, level_required, members, wiki_url, created_at, updated_at)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -79,7 +78,7 @@ class ConversionService:
                             now,
                             now
                         ))
-                        conv_id = cursor.fetchone()[0]
+                        conv_id = _res.mappings().fetchone()[0]
                         new_count += 1
                     
                     # Insert items
@@ -90,15 +89,15 @@ class ConversionService:
                         items_to_insert.append((conv_id, output_item["id"], output_item["quantity"], False))
                     
                     if items_to_insert:
-                        cursor.executemany('''
+                        executemany_query(session, '''
                             INSERT INTO conversion_items (conversion_id, item_id, quantity, is_input)
                             VALUES (?, ?, ?, ?)
                         ''', items_to_insert)
                 
-                conn.commit()
+                session.commit()
                 return {"message": f"Sync complete: {new_count} new, {updated_count} updated", "count": new_count + updated_count}
             except Exception as e:
-                conn.rollback()
+                session.rollback()
                 logger.error(f"Error syncing conversions: {e}")
                 raise
 
@@ -108,20 +107,19 @@ class ConversionService:
         latest_prices = fetch_latest_prices(use_cache=True).get("data", {})
         volume_data = fetch_volume_data(use_cache=True).get("data", {})
         
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             # Get all conversions
-            cursor.execute("SELECT * FROM item_conversions ORDER BY name")
-            conversions = [dict(row) for row in cursor.fetchall()]
+            _res = execute_query(session, "SELECT * FROM item_conversions ORDER BY name")
+            conversions = [dict(row) for row in _res.mappings().fetchall()]
             
             # Get all conversion items
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT ci.*, i.name as item_name 
                 FROM conversion_items ci
                 LEFT JOIN items i ON ci.item_id = i.id
             ''')
-            all_items = [dict(row) for row in cursor.fetchall()]
+            all_items = [dict(row) for row in _res.mappings().fetchall()]
             
             # Map items to conversions
             conv_items_map = {}

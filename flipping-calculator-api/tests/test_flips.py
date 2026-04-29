@@ -6,8 +6,8 @@ def test_search_flips(client, synced_items, auth_header):
     # To get profit, we need low > high + tax
     mock_prices = {
         "data": {
-            "2": {"high": 150, "highTime": 1600000000, "low": 160, "lowTime": 1600000000},
-            "4151": {"high": 1400000, "highTime": 1600000000, "low": 1500000, "lowTime": 1600000000}
+            "2": {"high": 160, "highTime": 1600000000, "low": 150, "lowTime": 1600000000},
+            "4151": {"high": 1500000, "highTime": 1600000000, "low": 1400000, "lowTime": 1600000000}
         }
     }
     mock_volume = {

@@ -6,7 +6,7 @@ Manages user preferences and state like available flipping cash
 
 from typing import Dict
 from datetime import datetime, timezone
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 
 
 class SettingsService:
@@ -14,18 +14,17 @@ class SettingsService:
     @staticmethod
     def get_settings(account_id: int) -> Dict:
         """Get user settings for a specific account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_settings WHERE account_id = ?', (account_id,))
-            row = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_settings WHERE account_id = ?', (account_id,))
+            row = _res.mappings().fetchone()
             
             if not row:
                 # Initialize if missing
-                cursor.execute('''
+                _res = execute_query(session, '''
                     INSERT INTO user_settings (account_id, available_cash) 
                     VALUES (?, 0)
                 ''', (account_id,))
-                conn.commit()
+                session.commit()
                 return {"account_id": account_id, "available_cash": 0, "last_updated": datetime.now(timezone.utc).isoformat()}
             
             return dict(row)
@@ -42,14 +41,13 @@ class SettingsService:
         Returns:
             Updated settings
         """
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 UPDATE user_settings 
                 SET available_cash = ?, last_updated = ?
                 WHERE account_id = ?
             ''', (amount, datetime.now(timezone.utc), account_id))
-            conn.commit()
+            session.commit()
         
         return SettingsService.get_settings(account_id)
     
@@ -66,23 +64,22 @@ class SettingsService:
         Returns:
             Updated settings with new available_cash
         """
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             # Get current cash
-            cursor.execute('SELECT available_cash FROM user_settings WHERE account_id = ?', (account_id,))
-            row = cursor.fetchone()
+            _res = execute_query(session, 'SELECT available_cash FROM user_settings WHERE account_id = ?', (account_id,))
+            row = _res.mappings().fetchone()
             current = row['available_cash'] if row else 0
             
             new_amount = current + delta
             
-            cursor.execute('''
+            _res = execute_query(session, '''
                 UPDATE user_settings 
                 SET available_cash = ?, last_updated = ?
                 WHERE account_id = ?
             ''', (new_amount, datetime.now(timezone.utc), account_id))
             
-            conn.commit()
+            session.commit()
             
             return {
                 "account_id": account_id,

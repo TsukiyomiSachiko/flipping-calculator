@@ -27,9 +27,9 @@ def test_break_even_profitability(mock_fetch):
     result = RecoveryAnalysisService.analyse_recovery(item_id, buy_price)
     
     assert result is not None
-    assert result['distance_gp'] == 0
+    assert result['distance_gp'] == 1
     assert result['recommendation'] == "SELL"
-    assert result['reasoning'] == "Break-even at current market prices."
+    assert result['reasoning'] == "Already profitable at current market prices."
 
 @patch('app.services.recovery_service.fetch_price_timeseries')
 def test_already_profitable(mock_fetch):

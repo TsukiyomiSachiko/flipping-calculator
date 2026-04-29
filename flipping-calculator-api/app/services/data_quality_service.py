@@ -16,7 +16,7 @@ import logging
 from typing import Dict, Optional, List, Tuple
 from statistics import mean, stdev
 from datetime import datetime, timedelta, timezone
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 
 logger = logging.getLogger(__name__)
 
@@ -309,13 +309,12 @@ class DataQualityService:
                 return cls._volatility_cache[item_id]
 
         try:
-            with get_db() as conn:
-                cursor = conn.cursor()
+            with get_db() as session:
                 
                 # Get hourly price snapshots for past N days
                 since_datetime = datetime.now(timezone.utc) - timedelta(days=days)
                 
-                cursor.execute('''
+                _res = execute_query(session, '''
                     SELECT timestamp, price_high, price_low
                     FROM price_history
                     WHERE item_id = ?
@@ -323,7 +322,7 @@ class DataQualityService:
                     ORDER BY timestamp ASC
                 ''', (item_id, since_datetime))
                 
-                rows = cursor.fetchall()
+                rows = _res.mappings().fetchall()
                 
                 if len(rows) < 24:  # Need at least 24 hours of data
                     cls._volatility_cache[item_id] = None
@@ -382,8 +381,7 @@ class DataQualityService:
 
         if not is_cached:
             try:
-                with get_db() as conn:
-                    cursor = conn.cursor()
+                with get_db() as session:
                     
                     # Get prices from 24 hours ago
                     day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
@@ -391,7 +389,7 @@ class DataQualityService:
                     # Added an upper bound to prevent full table scanning if exact 24h is missing
                     upper_bound = day_ago + timedelta(hours=2)
                     
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         SELECT price_high, price_low
                         FROM price_history
                         WHERE item_id = ?
@@ -401,7 +399,7 @@ class DataQualityService:
                         LIMIT 10
                     ''', (item_id, day_ago, upper_bound))
                     
-                    historical_rows = cursor.fetchall()
+                    historical_rows = _res.mappings().fetchall()
                     
                     if len(historical_rows) >= 5:
                         historical_mids = []
@@ -507,20 +505,19 @@ class DataQualityService:
             upper_bound = day_ago + timedelta(hours=2)
             month_ago = datetime.now(timezone.utc) - timedelta(days=30)
             
-            with get_db() as conn:
-                cursor = conn.cursor()
+            with get_db() as session:
                 for item in items:
                     item_id = item['id']
                     
                     # 1. Precalculate Volatility and Trajectory (using 30 days)
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         SELECT timestamp, price_high, price_low
                         FROM price_history
                         WHERE item_id = ?
                         AND timestamp >= ?
                         ORDER BY timestamp ASC
                     ''', (item_id, month_ago))
-                    rows = cursor.fetchall()
+                    rows = _res.mappings().fetchall()
                     if len(rows) >= 24:
                         changes = []
                         for i in range(1, len(rows)):
@@ -549,7 +546,7 @@ class DataQualityService:
                             new_trajectory[item_id] = traj
                     
                     # 2. Precalculate Stability Baseline
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         SELECT price_high, price_low
                         FROM price_history
                         WHERE item_id = ?
@@ -559,7 +556,7 @@ class DataQualityService:
                         LIMIT 10
                     ''', (item_id, day_ago, upper_bound))
                     
-                    hist_rows = cursor.fetchall()
+                    hist_rows = _res.mappings().fetchall()
                     if len(hist_rows) >= 5:
                         hist_mids = [(r['price_high'] + r['price_low'])/2 for r in hist_rows if r['price_high'] is not None and r['price_low'] is not None]
                         if len(hist_mids) >= 5:

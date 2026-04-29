@@ -19,7 +19,7 @@ from typing import Optional
 from app.utils.api_client import fetch_5m_volume_data, fetch_latest_prices
 from app.services.price_history_service import PriceHistoryService
 from app.services.item_service import ItemService
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 
 logger = logging.getLogger(__name__)
 
@@ -201,14 +201,13 @@ class PricePollingService:
         if minutes < 1:
             raise ValueError("Polling interval must be at least 1 minute")
         
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 UPDATE price_polling_metadata
                 SET poll_interval_minutes = ?
                 WHERE id = 1
             ''', (minutes,))
-            conn.commit()
+            session.commit()
         
         self._poll_interval_seconds = minutes * 60
         logger.info(f"Polling interval changed to {minutes} minutes")

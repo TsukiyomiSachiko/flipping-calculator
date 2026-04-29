@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 import math
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 from app.utils.api_client import fetch_item_mapping, fetch_latest_prices, fetch_volume_data, fetch_5m_volume_data
 from datetime import datetime, timezone
 
@@ -306,21 +306,20 @@ class ItemService:
         """
         item_data = fetch_item_mapping(use_cache=not force_update)
         
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             if not force_update:
                 # Get existing IDs to find truly new items
-                cursor.execute('SELECT id FROM items')
-                existing_ids = {row['id'] for row in cursor.fetchall()}
+                _res = execute_query(session, 'SELECT id FROM items')
+                existing_ids = {row['id'] for row in _res.mappings().fetchall()}
                 items_to_sync = [item for item in item_data if item['id'] not in existing_ids]
             else:
                 items_to_sync = item_data
             
             if not items_to_sync:
                 # Still update the sync time even if no new items
-                cursor.execute("UPDATE price_polling_metadata SET last_item_sync_time = ? WHERE id = 1", (datetime.now(timezone.utc),))
-                conn.commit()
+                _res = execute_query(session, "UPDATE price_polling_metadata SET last_item_sync_time = ? WHERE id = 1", (datetime.now(timezone.utc),))
+                session.commit()
                 return {"message": "No new items to sync", "count": 0}
             
             # Batch insert/update items
@@ -341,7 +340,7 @@ class ItemService:
                 ))
             
             # Use ON CONFLICT for robustness even in incremental mode
-            cursor.executemany('''
+            executemany_query(session, '''
                 INSERT INTO items 
                 (id, name, examine, members, lowalch, highalch, value, ge_limit, icon, last_updated)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -358,40 +357,37 @@ class ItemService:
             ''', items_to_insert)
             
             # Update last sync time in metadata
-            cursor.execute("UPDATE price_polling_metadata SET last_item_sync_time = ? WHERE id = 1", (now,))
+            _res = execute_query(session, "UPDATE price_polling_metadata SET last_item_sync_time = ? WHERE id = 1", (now,))
             
-            conn.commit()
+            session.commit()
             return {"message": f"Synced {len(items_to_insert)} items", "count": len(items_to_insert)}
     
     @staticmethod
     def get_all_items() -> List[Dict]:
         """Get all items from database"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM items ORDER BY name')
-            return [dict(row) for row in cursor.fetchall()]
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM items ORDER BY name')
+            return [dict(row) for row in _res.mappings().fetchall()]
     
     @staticmethod
     def search_items(query: str) -> List[Dict]:
         """Search items by name - case insensitive, exact match first"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT * FROM items 
                 WHERE LOWER(name) LIKE LOWER(?)
                 ORDER BY 
                     CASE WHEN LOWER(TRIM(name)) = LOWER(TRIM(?)) THEN 0 ELSE 1 END,
                     name
             ''', (f'%{query}%', query))
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(row) for row in _res.mappings().fetchall()]
     
     @staticmethod
     def get_item_by_id(item_id: int) -> Optional[Dict]:
         """Get single item by ID"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM items WHERE id = ?', (item_id,))
-            row = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM items WHERE id = ?', (item_id,))
+            row = _res.mappings().fetchone()
             return dict(row) if row else None
 
     @staticmethod

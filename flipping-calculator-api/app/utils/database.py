@@ -36,211 +36,103 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base class for models
 Base = declarative_base()
 
+def execute_query(session, query: str, params=None):
+    if not params:
+        if 'INSERT INTO' in query.upper() and 'RETURNING' not in query.upper():
+            query = query.rstrip().rstrip(';') + ' RETURNING id'
+        return session.execute(text(query))
 
-class RowProxy:
-    """Makes SQLAlchemy result rows behave like SQLite Row objects"""
-    def __init__(self, keys, values):
-        self._keys = keys
-        self._values = values
-        self._dict = dict(zip(keys, values))
+    converted_query = query
+    param_dict = {}
     
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return self._values[key]
-        return self._dict[key]
+    if isinstance(params, (list, tuple)):
+        for i, param in enumerate(params):
+            placeholder = f':param{i}'
+            converted_query = converted_query.replace('?', placeholder, 1)
+            param_dict[f'param{i}'] = param
+    elif isinstance(params, dict):
+        param_dict = params
     
-    def keys(self):
-        return self._keys
-    
-    def __iter__(self):
-        return iter(self._values)
+    if 'INSERT INTO' in converted_query.upper() and 'RETURNING' not in converted_query.upper():
+        converted_query = converted_query.rstrip().rstrip(';') + ' RETURNING id'
+
+    return session.execute(text(converted_query), param_dict)
 
 
-class CursorWrapper:
-    """Makes SQLAlchemy session behave like SQLite cursor for compatibility"""
-    def __init__(self, session):
-        self.session = session
-        self._result = None
-        self.rowcount = 0
-        self.lastrowid = None
-    
-    def execute(self, query, params=None):
-        # Convert ? placeholders to :param1, :param2, etc for PostgreSQL
-        if params and '?' in query:
-            converted_query = query
-            param_dict = {}
-            if isinstance(params, (list, tuple)):
-                for i, param in enumerate(params):
-                    placeholder = f':param{i}'
-                    converted_query = converted_query.replace('?', placeholder, 1)
-                    param_dict[f'param{i}'] = param
-            else:
-                param_dict = params
-            
-            # For INSERT queries without RETURNING, add RETURNING id to capture lastrowid
-            if 'INSERT INTO' in converted_query.upper() and 'RETURNING' not in converted_query.upper():
-                converted_query = converted_query.rstrip().rstrip(';') + ' RETURNING id'
-            
-            self._result = self.session.execute(text(converted_query), param_dict)
-        else:
-            # For non-parameterized queries
-            converted_query = query
-            if 'INSERT INTO' in converted_query.upper() and 'RETURNING' not in converted_query.upper():
-                converted_query = converted_query.rstrip().rstrip(';') + ' RETURNING id'
-            
-            self._result = self.session.execute(text(converted_query), params or {})
+def executemany_query(session, query: str, params_list):
+    if not params_list:
+        return
         
-        self.rowcount = self._result.rowcount if hasattr(self._result, 'rowcount') else 0
-        
-        # Capture lastrowid for INSERT operations
-        if 'INSERT INTO' in query.upper():
-            try:
-                # Use a fresh fetch to avoid exhausting results if multiple rows (unlikely for our inserts)
-                # For our simple inserts, one row is expected from RETURNING id
-                row = self._result.fetchone()
-                if row:
-                    self.lastrowid = row[0]
-                    # Since we consumed the row, we need to store it if someone calls fetchone()
-                    self._first_row = row
-                else:
-                    self.lastrowid = None
-                    self._first_row = None
-            except:
-                self.lastrowid = None
-                self._first_row = None
-        else:
-            self.lastrowid = None
-            self._first_row = None
-        
-        return self._result
-    
-    def executemany(self, query, params_list):
-        # Convert ? to named parameters
-        count = 0
+    converted_query = query
+    if isinstance(params_list[0], (list, tuple)):
+        for i in range(len(params_list[0])):
+            placeholder = f':param{i}'
+            converted_query = converted_query.replace('?', placeholder, 1)
+            
+        dict_params_list = []
         for params in params_list:
-            converted_query = query
-            param_dict = {}
-            if isinstance(params, (list, tuple)):
-                for i, param in enumerate(params):
-                    placeholder = f':param{i}'
-                    converted_query = converted_query.replace('?', placeholder, 1)
-                    param_dict[f'param{i}'] = param
-            else:
-                param_dict = params
+            param_dict = {f'param{i}': p for i, p in enumerate(params)}
+            dict_params_list.append(param_dict)
             
-            # Note: Postgres doesn't like INSERT OR REPLACE, but SQLite does.
-            # If we're on SQLite, we keep it. If we're on Postgres, we'd need to convert it.
-            # For now, we assume the query is compatible or handled by the engine.
-            self.session.execute(text(converted_query), param_dict)
-            count += 1
-        self.rowcount = count
-    
-    def fetchone(self):
-        if hasattr(self, '_first_row') and self._first_row is not None:
-            row = self._first_row
-            self._first_row = None
-            return RowProxy(self._result.keys(), row)
-            
-        if not self._result:
-            return None
-        row = self._result.fetchone()
-        if row is None:
-            return None
-        return RowProxy(self._result.keys(), row)
-    
-    def fetchall(self):
-        if not self._result:
-            return []
-        rows = self._result.fetchall()
-        # Convert all rows to dict-like objects
-        keys = self._result.keys()
-        return [RowProxy(keys, row) for row in rows]
+        return session.execute(text(converted_query), dict_params_list)
+    else:
+         return session.execute(text(converted_query), params_list)
+
 
 
 @contextmanager
 def get_db():
-    """
-    Context manager for database sessions with SQLite compatibility.
-    
-    Returns a session with a cursor() method for backward compatibility.
-    
-    Usage:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM items")
-            rows = cursor.fetchall()
-    """
     session = SessionLocal()
-    
-    # Add cursor() method to session for compatibility
-    def cursor():
-        return CursorWrapper(session)
-    
-    session.cursor = cursor
-    
     try:
         yield session
         session.commit()
     except Exception as e:
         session.rollback()
         logger.error(f"Database error: {e}")
+        import traceback
+        traceback.print_exc()
         raise
     finally:
         session.close()
 
 
 def init_database():
-    """Initialize database with all required tables"""
-    is_sqlite = 'sqlite' in str(engine.url)
-    pk_type = "INTEGER PRIMARY KEY AUTOINCREMENT" if is_sqlite else "SERIAL PRIMARY KEY"
+    pk_type = "SERIAL PRIMARY KEY"
+    logger.info("Initializing PostgreSQL database...")
     
-    logger.info(f"Initializing {'SQLite' if is_sqlite else 'PostgreSQL'} database...")
-    
-    with get_db() as conn:
-        cursor = conn.cursor()
-        
-        # Accounts table
-        cursor.execute(f'''
+    with get_db() as session:
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS accounts (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 password_hash TEXT
             )
-        ''')
+        '''))
         
         # Migration: Add password_hash if missing
         try:
-            if is_sqlite:
-                cursor.execute("PRAGMA table_info(accounts)")
-                columns = [info[1] for info in cursor.fetchall()]
-                if 'password_hash' not in columns:
-                    logger.info("Migrating: Adding password_hash to accounts...")
-                    cursor.execute("ALTER TABLE accounts ADD COLUMN password_hash TEXT")
-            else:
-                cursor.execute("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name='accounts' AND column_name='password_hash'
-                """)
-                if not cursor.fetchone():
-                    logger.info("Migrating: Adding password_hash to accounts...")
-                    cursor.execute("ALTER TABLE accounts ADD COLUMN password_hash TEXT")
+            result = session.execute(text("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name='accounts' AND column_name='password_hash'
+            """))
+            if not result.fetchone():
+                logger.info("Migrating: Adding password_hash to accounts...")
+                session.execute(text("ALTER TABLE accounts ADD COLUMN password_hash TEXT"))
             
             # Set default password for existing accounts
-            cursor.execute("SELECT COUNT(*) FROM accounts WHERE password_hash IS NULL")
-            if cursor.fetchone()[0] > 0:
+            result = session.execute(text("SELECT COUNT(*) FROM accounts WHERE password_hash IS NULL"))
+            if result.fetchone()[0] > 0:
                 from app.utils.security import get_password_hash
                 default_hash = get_password_hash("password")
                 logger.info("Setting default password 'password' for existing accounts...")
-                cursor.execute("UPDATE accounts SET password_hash = ? WHERE password_hash IS NULL", (default_hash,))
+                execute_query(session, "UPDATE accounts SET password_hash = ? WHERE password_hash IS NULL", (default_hash,))
                 
         except Exception as e:
             logger.warning(f"Migration check failed (might be already up to date): {e}")
 
-        # Items table
-        # id is NOT autoincrement here because it's the OSRS item ID
-        cursor.execute('''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -253,17 +145,13 @@ def init_database():
                 icon TEXT,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
+        '''))
         
-        # Create index on name
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_items_name ON items(name)
-        ''')
+        session.execute(text('CREATE INDEX IF NOT EXISTS idx_items_name ON items(name)'))
         
-        # User flips table
-        cursor.execute(f'''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS user_flips (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 account_id INTEGER,
                 item_id INTEGER NOT NULL,
                 item_name TEXT NOT NULL,
@@ -287,36 +175,25 @@ def init_database():
                 FOREIGN KEY (item_id) REFERENCES items(id),
                 FOREIGN KEY (account_id) REFERENCES accounts(id)
             )
-        ''')
+        '''))
         
-        # Create indexes
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_flips_status ON user_flips(status)
-        ''')
+        session.execute(text('CREATE INDEX IF NOT EXISTS idx_flips_status ON user_flips(status)'))
+        session.execute(text('CREATE INDEX IF NOT EXISTS idx_flips_item ON user_flips(item_id)'))
+        session.execute(text('CREATE INDEX IF NOT EXISTS idx_flips_account ON user_flips(account_id)'))
         
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_flips_item ON user_flips(item_id)
-        ''')
-
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_flips_account ON user_flips(account_id)
-        ''')
-        
-        # User settings table
-        cursor.execute(f'''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS user_settings (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 account_id INTEGER NOT NULL UNIQUE,
                 available_cash BIGINT DEFAULT 0,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (account_id) REFERENCES accounts(id)
             )
-        ''')
+        '''))
         
-        # Flip transactions table
-        cursor.execute(f'''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS flip_transactions (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 flip_id INTEGER NOT NULL,
                 transaction_type TEXT NOT NULL,
                 mutation_type TEXT,
@@ -326,12 +203,11 @@ def init_database():
                 notes TEXT,
                 FOREIGN KEY (flip_id) REFERENCES user_flips(id)
             )
-        ''')
+        '''))
         
-        # Price history table
-        cursor.execute(f'''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS price_history (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 item_id INTEGER NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 price_high INTEGER,
@@ -341,16 +217,11 @@ def init_database():
                 UNIQUE(item_id, timestamp),
                 FOREIGN KEY (item_id) REFERENCES items(id)
             )
-        ''')
+        '''))
         
-        # Create index on item_id and timestamp for fast queries
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_price_history_item_time 
-            ON price_history(item_id, timestamp DESC)
-        ''')
+        session.execute(text('CREATE INDEX IF NOT EXISTS idx_price_history_item_time ON price_history(item_id, timestamp DESC)'))
         
-        # Price polling metadata table
-        cursor.execute('''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS price_polling_metadata (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
                 enabled BOOLEAN DEFAULT TRUE,
@@ -360,12 +231,11 @@ def init_database():
                 last_item_sync_time TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
+        '''))
 
-        # Item conversions table
-        cursor.execute(f'''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS item_conversions (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
                 category TEXT,
                 conversion_rate_per_hour INTEGER,
@@ -376,40 +246,33 @@ def init_database():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
+        '''))
 
-        # Conversion items table (for multiple inputs/outputs)
-        cursor.execute(f'''
+        session.execute(text('''
             CREATE TABLE IF NOT EXISTS conversion_items (
-                id {pk_type},
+                id SERIAL PRIMARY KEY,
                 conversion_id INTEGER NOT NULL,
                 item_id INTEGER NOT NULL,
                 quantity REAL NOT NULL DEFAULT 1,
                 is_input BOOLEAN NOT NULL,
                 FOREIGN KEY (conversion_id) REFERENCES item_conversions(id)
             )
-        ''')
+        '''))
 
-        # Create indexes for conversions
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_conv_items_cid ON conversion_items(conversion_id)
-        ''')
+        session.execute(text('CREATE INDEX IF NOT EXISTS idx_conv_items_cid ON conversion_items(conversion_id)'))
         
-        # Insert default metadata
-        cursor.execute('''
+        session.execute(text('''
             INSERT INTO price_polling_metadata (id, enabled) 
             VALUES (1, TRUE)
             ON CONFLICT (id) DO NOTHING
-        ''')
+        '''))
 
-        # Insert a default account if none exist
-        cursor.execute("SELECT COUNT(*) FROM accounts")
-        if cursor.fetchone()[0] == 0:
+        result = session.execute(text("SELECT COUNT(*) FROM accounts"))
+        if result.fetchone()[0] == 0:
             logger.info("Seeding default 'Main' account...")
-            cursor.execute("INSERT INTO accounts (name) VALUES ('Main')")
+            session.execute(text("INSERT INTO accounts (name) VALUES ('Main')"))
         
     logger.info("✅ Database initialized successfully!")
-
 
 def test_connection():
     """Test database connection"""

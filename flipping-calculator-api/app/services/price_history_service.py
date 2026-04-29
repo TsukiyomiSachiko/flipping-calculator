@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 import logging
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 
 logger = logging.getLogger(__name__)
 
@@ -167,8 +167,7 @@ class PriceHistoryService:
         """
         cutoff_datetime = datetime.now(timezone.utc) - timedelta(hours=hours)
         
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             query = '''
                 SELECT item_id, timestamp, price_high, price_low, volume_high, volume_low
@@ -180,8 +179,8 @@ class PriceHistoryService:
             if limit:
                 query += f' LIMIT {limit}'
             
-            cursor.execute(query, (item_id, cutoff_datetime))
-            rows = cursor.fetchall()
+            _res = execute_query(session, query, (item_id, cutoff_datetime))
+            rows = _res.mappings().fetchall()
             
             return [
                 {
@@ -272,10 +271,9 @@ class PriceHistoryService:
     @staticmethod
     def get_polling_metadata() -> Dict:
         """Get information about the polling system status"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM price_polling_metadata WHERE id = 1')
-            row = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM price_polling_metadata WHERE id = 1')
+            row = _res.mappings().fetchone()
             
             if not row:
                 return {
@@ -297,34 +295,32 @@ class PriceHistoryService:
     @staticmethod
     def set_polling_enabled(enabled: bool):
         """Enable or disable automatic price polling"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 UPDATE price_polling_metadata
                 SET enabled = ?
                 WHERE id = 1
             ''', (1 if enabled else 0,))
-            conn.commit()
+            session.commit()
         
         logger.info(f"Price polling {'enabled' if enabled else 'disabled'}")
     
     @staticmethod
     def get_database_stats() -> Dict:
         """Get statistics about the price history database"""
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             # Total records
-            cursor.execute('SELECT COUNT(*) as total FROM price_history')
-            total_records = cursor.fetchone()['total']
+            _res = execute_query(session, 'SELECT COUNT(*) as total FROM price_history')
+            total_records = _res.mappings().fetchone()['total']
             
             # Unique items tracked
-            cursor.execute('SELECT COUNT(DISTINCT item_id) as items FROM price_history')
-            unique_items = cursor.fetchone()['items']
+            _res = execute_query(session, 'SELECT COUNT(DISTINCT item_id) as items FROM price_history')
+            unique_items = _res.mappings().fetchone()['items']
             
             # Oldest and newest timestamps
-            cursor.execute('SELECT MIN(timestamp) as oldest, MAX(timestamp) as newest FROM price_history')
-            row = cursor.fetchone()
+            _res = execute_query(session, 'SELECT MIN(timestamp) as oldest, MAX(timestamp) as newest FROM price_history')
+            row = _res.mappings().fetchone()
             oldest_dt = row['oldest']  # Already a datetime object from PostgreSQL
             newest_dt = row['newest']  # Already a datetime object from PostgreSQL
             
@@ -356,11 +352,10 @@ class PriceHistoryService:
         """
         cutoff_datetime = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
         
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM price_history WHERE timestamp < ?', (cutoff_datetime,))
-            deleted = cursor.rowcount
-            conn.commit()
+        with get_db() as session:
+            _res = execute_query(session, 'DELETE FROM price_history WHERE timestamp < ?', (cutoff_datetime,))
+            deleted = _res.rowcount
+            session.commit()
         
         if deleted > 0:
             logger.info(f"Cleaned up {deleted} old price records (kept last {days_to_keep} days)")

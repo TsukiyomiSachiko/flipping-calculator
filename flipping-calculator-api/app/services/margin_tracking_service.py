@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 from collections import defaultdict
 from app.services.price_history_service import PriceHistoryService
-from app.utils.database import get_db
+from app.utils.database import get_db, execute_query, executemany_query
 
 
 class MarginTrackingService:
@@ -261,10 +261,9 @@ class MarginTrackingService:
     def _get_item_name(item_id: int) -> str:
         """Get item name from database"""
         try:
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT name FROM items WHERE id = ?', (item_id,))
-                row = cursor.fetchone()
+            with get_db() as session:
+                _res = execute_query(session, 'SELECT name FROM items WHERE id = ?', (item_id,))
+                row = _res.mappings().fetchone()
                 return row['name'] if row else f"Item {item_id}"
         except Exception:
             return f"Item {item_id}"

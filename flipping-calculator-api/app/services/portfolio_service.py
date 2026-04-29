@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 import csv
 import io
 from datetime import datetime, timezone
-from app.utils.database import get_db, engine
+from app.utils.database import get_db, engine, execute_query, executemany_query
 from app.utils.api_client import fetch_latest_prices, fetch_volume_data
 from app.services.item_service import ItemService
 from app.services.settings_service import SettingsService
@@ -25,17 +25,16 @@ class PortfolioService:
         Log a buy transaction with optional intended quantity for partial fills.
         """
         # Search for item
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             # Case-insensitive search, exact match sorted first
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT * FROM items 
                 WHERE LOWER(name) LIKE LOWER(?)
                 ORDER BY 
                     CASE WHEN LOWER(TRIM(name)) = LOWER(TRIM(?)) THEN 0 ELSE 1 END,
                     name
             ''', (f'%{item_name}%', item_name))
-            items = cursor.fetchall()
+            items = _res.mappings().fetchall()
             if not items:
                 return {"error": "No items found matching query"}
             # Check if first result is an exact match
@@ -62,7 +61,7 @@ class PortfolioService:
             # Insert flip with timestamp tracking
             now = datetime.now(timezone.utc)
             last_buy = now if quantity > 0 else None
-            cursor.execute('''
+            _res = execute_query(session, '''
                 INSERT INTO user_flips (
                     account_id, item_id, item_name, quantity_total, quantity_remaining, buy_price, 
                     intended_quantity, intended_sell_price, notes,
@@ -70,14 +69,14 @@ class PortfolioService:
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (account_id, item['id'], item['name'], quantity, quantity, price, intended_quantity, intended_sell_price, notes, now, last_buy))
-            flip_id = cursor.lastrowid
+            flip_id = _res.scalar()
             # Only log transaction if quantity > 0 (actual items bought)
             if quantity > 0:
-                cursor.execute('''
+                _res = execute_query(session, '''
                     INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, quantity, price, notes)
                     VALUES (?, 'buy', 'trade', ?, ?, ?)
                 ''', (flip_id, quantity, price, notes))
-            conn.commit()
+            session.commit()
             # Adjust available cash based on intended quantity (reserves cash for the offer)
             # If quantity > 0, use that (partial fill). Otherwise use intended_quantity (offer placed)
             cash_reserve = quantity if quantity > 0 else intended_quantity
@@ -98,10 +97,9 @@ class PortfolioService:
     @staticmethod
     def add_to_flip(flip_id: int, quantity: int, price: int, notes: Optional[str] = None) -> Dict:
         """Add more quantity to existing flip"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip:
                 return {"error": "Flip not found"}
             account_id = flip['account_id']
@@ -139,7 +137,7 @@ class PortfolioService:
             if had_no_inventory and will_have_inventory:
                 # First time getting inventory - set sell_offer_started_at
                 sell_offer_started = now
-                cursor.execute('''
+                _res = execute_query(session, '''
                     UPDATE user_flips 
                     SET quantity_total = ?, quantity_remaining = ?, buy_price = ?,
                         last_buy_at = ?, sell_offer_started_at = ?
@@ -147,18 +145,18 @@ class PortfolioService:
                 ''', (new_total_qty, new_remaining, new_avg_price, now, sell_offer_started, flip_id))
             else:
                 # Just update last_buy_at
-                cursor.execute('''
+                _res = execute_query(session, '''
                     UPDATE user_flips 
                     SET quantity_total = ?, quantity_remaining = ?, buy_price = ?,
                         last_buy_at = ?
                     WHERE id = ?
                 ''', (new_total_qty, new_remaining, new_avg_price, now, flip_id))
             # Log transaction
-            cursor.execute('''
+            _res = execute_query(session, '''
                 INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, quantity, price, notes)
                 VALUES (?, 'buy', 'trade', ?, ?, ?)
             ''', (flip_id, quantity, price, notes))
-            conn.commit()
+            session.commit()
             # Adjust available cash
             intended_qty = flip['intended_quantity'] if 'intended_quantity' in flip.keys() else None
             if intended_qty is not None:
@@ -185,10 +183,9 @@ class PortfolioService:
     def log_sell(flip_id: int, price: Optional[int], price_total: Optional[int], 
                  quantity: Optional[int], notes: Optional[str] = None) -> Dict:
         """Log a sell transaction"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip:
                 return {"error": "Flip not found"}
             account_id = flip['account_id']
@@ -216,7 +213,7 @@ class PortfolioService:
             # Update remaining
             new_remaining = flip['quantity_remaining'] - sell_qty
             # Log transaction
-            cursor.execute('''
+            _res = execute_query(session, '''
                 INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, quantity, price, notes)
                 VALUES (?, 'sell', 'trade', ?, ?, ?)
             ''', (flip_id, sell_qty, price_per_item, notes))
@@ -228,7 +225,7 @@ class PortfolioService:
                 if should_complete:
                     total_profit = (flip['profit'] or 0) + profit_this_sale
                     now = datetime.now(timezone.utc)
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         UPDATE user_flips 
                         SET quantity_remaining = 0, sell_price = ?, sell_time = ?, 
                             profit = ?, roi = ?, status = 'completed',
@@ -239,7 +236,7 @@ class PortfolioService:
                 else:
                     total_profit = (flip['profit'] or 0) + profit_this_sale
                     now = datetime.now(timezone.utc)
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         UPDATE user_flips 
                         SET quantity_remaining = 0, sell_price = ?, sell_time = ?, 
                             profit = ?, roi = ?, status = 'partially_completed',
@@ -248,7 +245,7 @@ class PortfolioService:
                     ''', (price_per_item, now, total_profit, roi, now, flip_id))
                     status_msg = f"partially_completed (sold all {total_bought}, target was {intended_qty})"
                 sell_revenue = sell_qty * (price_per_item - ge_tax)
-                conn.commit()
+                session.commit()
                 SettingsService.adjust_cash(account_id, sell_revenue, f"Sell: {sell_qty}x @ {price_per_item}")
                 return {
                     "flip_id": flip_id,
@@ -274,21 +271,21 @@ class PortfolioService:
                 now = datetime.now(timezone.utc)
                 is_first_sell = flip['sell_price'] is None
                 if is_first_sell:
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         UPDATE user_flips 
                         SET quantity_remaining = ?, profit = ?, sell_price = ?, status = ?,
                             sell_offer_started_at = ?, last_sell_at = ?
                         WHERE id = ?
                     ''', (new_remaining, total_profit, avg_sell_price, new_status, now, now, flip_id))
                 else:
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         UPDATE user_flips 
                         SET quantity_remaining = ?, profit = ?, sell_price = ?, status = ?,
                             last_sell_at = ?
                         WHERE id = ?
                     ''', (new_remaining, total_profit, avg_sell_price, new_status, now, flip_id))
                 sell_revenue = sell_qty * (price_per_item - ge_tax)
-                conn.commit()
+                session.commit()
                 SettingsService.adjust_cash(account_id, sell_revenue, f"Sell: {sell_qty}x @ {price_per_item}")
                 return {
                     "flip_id": flip_id,
@@ -303,10 +300,9 @@ class PortfolioService:
     @staticmethod
     def cancel_flip(flip_id: int, reason: Optional[str] = None) -> Dict:
         """Cancel a pending flip - promotes partially_completed to completed"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip:
                 return {"error": "Flip not found"}
             if flip['status'] == 'completed':
@@ -332,19 +328,19 @@ class PortfolioService:
             else:
                 new_status = 'cancelled'
                 message = f"Cancelled flip #{flip_id} (no sales made)"
-            cursor.execute('''
+            _res = execute_query(session, '''
                 UPDATE user_flips 
                 SET status = ?, cancel_reason = ?, sell_time = COALESCE(sell_time, ?)
                 WHERE id = ?
             ''', (new_status, reason, datetime.now(timezone.utc), flip_id))
             
             # Log mutation
-            cursor.execute('''
+            _res = execute_query(session, '''
                 INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, notes)
                 VALUES (?, ?, 'cancel', ?)
             ''', (flip_id, new_status, reason or "Flip cancelled/completed"))
             
-            conn.commit()
+            session.commit()
             if cash_refund > 0:
                 SettingsService.adjust_cash(account_id, cash_refund, refund_reason)
             return {
@@ -357,17 +353,16 @@ class PortfolioService:
     @staticmethod
     def delete_flip(flip_id: int) -> Dict:
         """Permanently delete a flip and all its transactions."""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip:
                 return {"error": "Flip not found"}
             flip_dict = dict(flip)
-            cursor.execute('DELETE FROM flip_transactions WHERE flip_id = ?', (flip_id,))
-            transactions_deleted = cursor.rowcount
-            cursor.execute('DELETE FROM user_flips WHERE id = ?', (flip_id,))
-            conn.commit()
+            _res = execute_query(session, 'DELETE FROM flip_transactions WHERE flip_id = ?', (flip_id,))
+            transactions_deleted = _res.rowcount
+            _res = execute_query(session, 'DELETE FROM user_flips WHERE id = ?', (flip_id,))
+            session.commit()
             return {
                 "success": True,
                 "flip_id": flip_id,
@@ -378,10 +373,9 @@ class PortfolioService:
     @staticmethod
     def adjust_intended_quantity(flip_id: int) -> Dict:
         """Adjust intended_quantity to match quantity_total and free up reserved cash."""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip:
                 return {"error": "Flip not found"}
             account_id = flip['account_id']
@@ -397,15 +391,15 @@ class PortfolioService:
                 return {"error": f"Cannot set intended quantity ({new_intended}) higher than original ({old_intended})"}
             cancelled_qty = old_intended - new_intended
             cash_to_free = cancelled_qty * flip['buy_price']
-            cursor.execute('UPDATE user_flips SET intended_quantity = ? WHERE id = ?', (new_intended, flip_id))
+            _res = execute_query(session, 'UPDATE user_flips SET intended_quantity = ? WHERE id = ?', (new_intended, flip_id))
             
             # Log mutation
-            cursor.execute('''
+            _res = execute_query(session, '''
                 INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, quantity, price, notes)
                 VALUES (?, 'adjust', 'adjust_target', ?, ?, ?)
             ''', (flip_id, new_intended, flip['buy_price'], f"Target adjusted from {old_intended} to {new_intended}"))
             
-            conn.commit()
+            session.commit()
             SettingsService.adjust_cash(
                 account_id, cash_to_free, 
                 f"Freed reserved cash for cancelled portion of flip #{flip_id} ({cancelled_qty}x @ {flip['buy_price']})"
@@ -421,10 +415,9 @@ class PortfolioService:
     @staticmethod
     def update_buy_price(flip_id: int, new_price: int) -> Dict:
         """Update the buy price for a pending flip."""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip:
                 return {"error": "Flip not found"}
             account_id = flip['account_id']
@@ -443,15 +436,15 @@ class PortfolioService:
                 unfilled_qty = intended_qty - quantity_bought
                 cash_adjustment = price_diff * unfilled_qty
             
-            cursor.execute('UPDATE user_flips SET buy_price = ? WHERE id = ?', (new_price, flip_id))
+            _res = execute_query(session, 'UPDATE user_flips SET buy_price = ? WHERE id = ?', (new_price, flip_id))
             
             # Log mutation
-            cursor.execute('''
+            _res = execute_query(session, '''
                 INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, price, notes)
                 VALUES (?, 'update', 'price_update', ?, ?)
             ''', (flip_id, new_price, f"Buy price updated from {old_price} to {new_price}"))
             
-            conn.commit()
+            session.commit()
             if cash_adjustment != 0:
                 SettingsService.adjust_cash(
                     account_id, -cash_adjustment,
@@ -466,25 +459,23 @@ class PortfolioService:
     @staticmethod
     def get_pending_flips(account_id: int) -> List[Dict]:
         """Get all pending and partially_completed flips for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT * FROM user_flips 
                 WHERE account_id = ? AND status IN ('pending', 'partially_completed')
                 ORDER BY buy_time DESC
             ''', (account_id,))
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(row) for row in _res.mappings().fetchall()]
     @staticmethod
     def get_pending_with_projections(account_id: int) -> Dict:
         """Get pending and partially_completed flips enriched for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT * FROM user_flips 
                 WHERE account_id = ? AND status IN ('pending', 'partially_completed')
                 ORDER BY buy_time DESC
             ''', (account_id,))
-            flips = [dict(row) for row in cursor.fetchall()]
+            flips = [dict(row) for row in _res.mappings().fetchall()]
         if not flips:
             return {"flips": [], "total_projected_profit": 0, "total_current_value": 0, "total_invested": 0}
         latest_data = fetch_latest_prices(use_cache=True)
@@ -549,33 +540,30 @@ class PortfolioService:
     @staticmethod
     def get_completed_flips(account_id: int, limit: int = 20) -> List[Dict]:
         """Get completed and partially_completed flips for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT * FROM user_flips 
                 WHERE account_id = ? AND status IN ('completed', 'partially_completed')
                 ORDER BY sell_time DESC
                 LIMIT ?
             ''', (account_id, limit))
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(row) for row in _res.mappings().fetchall()]
     @staticmethod
     def get_cancelled_flips(account_id: int, limit: int = 20) -> List[Dict]:
         """Get cancelled flips for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT * FROM user_flips 
                 WHERE account_id = ? AND status = 'cancelled'
                 ORDER BY sell_time DESC
                 LIMIT ?
             ''', (account_id, limit))
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(row) for row in _res.mappings().fetchall()]
     @staticmethod
     def get_recent_mutations(account_id: int, limit: int = 50) -> List[Dict]:
         """Get the most recent mutations/transactions across all flips for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT ft.*, uf.item_name, uf.item_id
                 FROM flip_transactions ft
                 JOIN user_flips uf ON ft.flip_id = uf.id
@@ -583,25 +571,23 @@ class PortfolioService:
                 ORDER BY ft.timestamp DESC
                 LIMIT ?
             ''', (account_id, limit))
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(row) for row in _res.mappings().fetchall()]
 
     @staticmethod
     def get_flip_details(flip_id: int) -> Optional[Dict]:
         """Get flip with all transactions - flip_id is unique"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM user_flips WHERE id = ?', (flip_id,))
-            flip = cursor.fetchone()
+        with get_db() as session:
+            _res = execute_query(session, 'SELECT * FROM user_flips WHERE id = ?', (flip_id,))
+            flip = _res.mappings().fetchone()
             if not flip: return None
-            cursor.execute('SELECT * FROM flip_transactions WHERE flip_id = ? ORDER BY timestamp ASC', (flip_id,))
-            transactions = [dict(row) for row in cursor.fetchall()]
+            _res = execute_query(session, 'SELECT * FROM flip_transactions WHERE flip_id = ? ORDER BY timestamp ASC', (flip_id,))
+            transactions = [dict(row) for row in _res.mappings().fetchall()]
             return {"flip": dict(flip), "transactions": transactions}
     @staticmethod
     def get_summary(account_id: int) -> Dict:
         """Get portfolio summary for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT COUNT(*) as total_flips, SUM(profit) as total_profit, AVG(roi) as avg_roi,
                        SUM(CASE WHEN profit > 0 THEN 1 ELSE 0 END) as winning_flips,
                        SUM(CASE WHEN profit < 0 THEN 1 ELSE 0 END) as losing_flips,
@@ -609,15 +595,15 @@ class PortfolioService:
                        SUM(buy_price * quantity_total) as total_invested
                 FROM user_flips WHERE account_id = ? AND status = 'completed'
             ''', (account_id,))
-            completed = dict(cursor.fetchone())
-            cursor.execute('''
+            completed = dict(_res.mappings().fetchone())
+            _res = execute_query(session, '''
                 SELECT COUNT(*) as pending_flips, SUM(buy_price * quantity_remaining) as pending_capital,
                        SUM(COALESCE(profit, 0)) as pending_profit, SUM(buy_price * quantity_total) as pending_invested
                 FROM user_flips WHERE account_id = ? AND status IN ('pending', 'partially_completed')
             ''', (account_id,))
-            pending = dict(cursor.fetchone())
-            cursor.execute("SELECT COUNT(*) as cancelled_flips FROM user_flips WHERE account_id = ? AND status = 'cancelled'", (account_id,))
-            cancelled = dict(cursor.fetchone())
+            pending = dict(_res.mappings().fetchone())
+            _res = execute_query(session, "SELECT COUNT(*) as cancelled_flips FROM user_flips WHERE account_id = ? AND status = 'cancelled'", (account_id,))
+            cancelled = dict(_res.mappings().fetchone())
             total_profit_all = (completed['total_profit'] or 0) + (pending['pending_profit'] or 0)
             pending_sold_cost = (pending['pending_invested'] or 0) - (pending['pending_capital'] or 0)
             roi_in_progress = round((pending['pending_profit'] / pending_sold_cost) * 100, 2) if pending_sold_cost > 0 else 0
@@ -636,10 +622,9 @@ class PortfolioService:
     @staticmethod
     def get_statistics(account_id: int) -> Dict:
         """Get detailed portfolio statistics for an account"""
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             # Best and worst performing items (by total profit)
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT item_id, item_name,
                        COUNT(*) as flip_count,
                        SUM(profit) as total_profit,
@@ -650,11 +635,11 @@ class PortfolioService:
                 GROUP BY item_id, item_name
                 ORDER BY total_profit DESC
             ''', (account_id,))
-            items_by_profit = [dict(row) for row in cursor.fetchall()]
+            items_by_profit = [dict(row) for row in _res.mappings().fetchall()]
             best_items = items_by_profit[:5] if items_by_profit else []
             worst_items = list(reversed(items_by_profit[-5:])) if items_by_profit else []
             # Most traded items (by flip count)
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT item_id, item_name,
                        COUNT(*) as flip_count,
                        SUM(profit) as total_profit,
@@ -665,57 +650,44 @@ class PortfolioService:
                 ORDER BY flip_count DESC
                 LIMIT 5
             ''', (account_id,))
-            most_traded = [dict(row) for row in cursor.fetchall()]
+            most_traded = [dict(row) for row in _res.mappings().fetchall()]
             # Daily profit (last 30 days)
             # Use SQLite or Postgres compatible date function
-            is_sqlite = 'sqlite' in str(engine.url)
-            if is_sqlite:
-                cursor.execute('''
-                    SELECT DATE(sell_time) as day,
-                           COUNT(*) as flips,
-                           SUM(profit) as profit,
-                           AVG(roi) as avg_roi
-                    FROM user_flips
-                    WHERE account_id = ? AND status = 'completed'
-                      AND sell_time >= date('now', '-30 days')
-                    GROUP BY DATE(sell_time)
-                    ORDER BY day ASC
-                ''', (account_id,))
-            else:
-                cursor.execute('''
-                    SELECT DATE(sell_time) as day,
-                           COUNT(*) as flips,
-                           SUM(profit) as profit,
-                           AVG(roi) as avg_roi
-                    FROM user_flips
-                    WHERE account_id = ? AND status = 'completed'
-                      AND sell_time >= NOW() - INTERVAL '30 days'
-                    GROUP BY DATE(sell_time)
-                    ORDER BY day ASC
-                ''', (account_id,))
-            daily_profit = [dict(row) for row in cursor.fetchall()]
+            _res = execute_query(session, '''
+                SELECT date_trunc('day', sell_time) as day,
+                       COUNT(*) as flips,
+                       SUM(profit) as profit,
+                       SUM(roi) / COUNT(*) as avg_roi
+                FROM user_flips
+                WHERE account_id = ?
+                  AND status = 'completed'
+                  AND sell_time >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY date_trunc('day', sell_time)
+                ORDER BY day ASC
+            ''', (account_id,))
+            daily_profit = [dict(row) for row in _res.mappings().fetchall()]
             # Best single flip
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT item_id, item_name, profit, roi, quantity_total, buy_price, sell_price, sell_time
                 FROM user_flips
                 WHERE account_id = ? AND status = 'completed' AND profit IS NOT NULL
                 ORDER BY profit DESC
                 LIMIT 1
             ''', (account_id,))
-            row = cursor.fetchone()
+            row = _res.mappings().fetchone()
             best_single = dict(row) if row else None
             # Worst single flip
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT item_id, item_name, profit, roi, quantity_total, buy_price, sell_price, sell_time
                 FROM user_flips
                 WHERE account_id = ? AND status = 'completed' AND profit IS NOT NULL
                 ORDER BY profit ASC
                 LIMIT 1
             ''', (account_id,))
-            row = cursor.fetchone()
+            row = _res.mappings().fetchone()
             worst_single = dict(row) if row else None
             # Members vs F2P breakdown
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT i.members,
                        COUNT(*) as flip_count,
                        SUM(uf.profit) as total_profit,
@@ -726,18 +698,18 @@ class PortfolioService:
                 GROUP BY i.members
             ''', (account_id,))
             members_breakdown = []
-            for row in cursor.fetchall():
+            for row in _res.mappings().fetchall():
                 r = dict(row)
                 r['category'] = 'Members' if r['members'] else 'F2P'
                 members_breakdown.append(r)
             # Total volume traded
-            cursor.execute('''
+            _res = execute_query(session, '''
                 SELECT SUM(quantity_total) as total_volume,
                        SUM(buy_price * quantity_total) as total_turnover
                 FROM user_flips
                 WHERE account_id = ? AND status = 'completed'
             ''', (account_id,))
-            volume = dict(cursor.fetchone())
+            volume = dict(_res.mappings().fetchone())
             # Most profitable day
             best_day = max(daily_profit, key=lambda d: d['profit']) if daily_profit else None
             return {
@@ -756,14 +728,13 @@ class PortfolioService:
     @staticmethod
     def export_csv(account_id: int) -> str:
         """Export all flips for an account to CSV"""
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
+        with get_db() as session:
+            _res = execute_query(session, '''
                 SELECT * FROM user_flips 
                 WHERE account_id = ?
                 ORDER BY buy_time DESC
             ''', (account_id,))
-            flips = [dict(row) for row in cursor.fetchall()]
+            flips = [dict(row) for row in _res.mappings().fetchall()]
         
         output = io.StringIO()
         if not flips:
@@ -798,8 +769,7 @@ class PortfolioService:
         
         stats = {"imported": 0, "errors": 0, "skipped": 0, "details": []}
         
-        with get_db() as conn:
-            cursor = conn.cursor()
+        with get_db() as session:
             
             for i, row in enumerate(reader):
                 try:
@@ -825,13 +795,13 @@ class PortfolioService:
                         continue
 
                     # Verify item exists
-                    cursor.execute("SELECT id, name FROM items WHERE id = ?", (item_id,))
-                    item = cursor.fetchone()
+                    _res = execute_query(session, "SELECT id, name FROM items WHERE id = ?", (item_id,))
+                    item = _res.mappings().fetchone()
                     
                     # If ID doesn't match, try name
                     if not item and row.get('item_name'):
-                        cursor.execute("SELECT id, name FROM items WHERE lower(name) = lower(?)", (row['item_name'],))
-                        item = cursor.fetchone()
+                        _res = execute_query(session, "SELECT id, name FROM items WHERE lower(name) = lower(?)", (row['item_name'],))
+                        item = _res.mappings().fetchone()
                         if item:
                             item_id = item['id'] # Update ID to match DB
                     
@@ -853,7 +823,7 @@ class PortfolioService:
                     status = row.get('status', 'pending')
                     
                     # Insert flip
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         INSERT INTO user_flips (
                             account_id, item_id, item_name, quantity_total, quantity_remaining,
                             buy_price, sell_price, buy_time, sell_time,
@@ -868,11 +838,11 @@ class PortfolioService:
                         buy_time, sell_time if sell_time else None
                     ))
                     
-                    flip_id = cursor.lastrowid
+                    flip_id = _res.scalar()
                     
                     # Synthesize transactions
                     # Buy
-                    cursor.execute('''
+                    _res = execute_query(session, '''
                         INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, quantity, price, timestamp, notes)
                         VALUES (?, 'buy', 'import', ?, ?, ?, 'Imported buy')
                     ''', (flip_id, qty_total, buy_price, buy_time))
@@ -881,7 +851,7 @@ class PortfolioService:
                     if sell_time and qty_total > qty_remaining:
                         qty_sold = qty_total - qty_remaining
                         sell_p = sell_price if sell_price else 0
-                        cursor.execute('''
+                        _res = execute_query(session, '''
                             INSERT INTO flip_transactions (flip_id, transaction_type, mutation_type, quantity, price, timestamp, notes)
                             VALUES (?, 'sell', 'import', ?, ?, ?, 'Imported sell')
                         ''', (flip_id, qty_sold, sell_p, sell_time))
@@ -892,6 +862,6 @@ class PortfolioService:
                     stats['errors'] += 1
                     stats['details'].append(f"Row {i+1}: Unexpected error - {e}")
             
-            conn.commit()
+            session.commit()
             
         return stats
