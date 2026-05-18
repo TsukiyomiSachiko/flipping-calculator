@@ -124,6 +124,7 @@ export const portfolioApi = {
 export const settingsApi = {
   get: () => api.get('/api/settings'),
   setCash: (amount) => api.post('/api/settings/cash', { amount }),
+  setCashflow: (data) => api.post('/api/settings/cashflow', data),
 };
 
 // Price History & Polling API

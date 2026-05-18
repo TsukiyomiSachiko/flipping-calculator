@@ -340,6 +340,17 @@ export const useSetCash = () => {
   });
 };
 
+export const useSetCashflowSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: settingsApi.setCashflow,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+    },
+  });
+};
+
 // Price History & Polling Hooks
 export const usePriceHistoryStats = () => {
   return useQuery({
