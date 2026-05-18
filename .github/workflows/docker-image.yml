@@ -14,5 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build ./flipping-calculator-api --file Dockerfile --tag flipping-calculator:$(date +%s)
+    - name: Build the API Docker image
+      run: docker build ./flipping-calculator-api --file ./flipping-calculator-api/Dockerfile --tag flipping-calculator-api:$(date +%s)
+    - name: Build the Frontend Docker image
+      run: docker build ./flipping-calculator-frontend --file ./flipping-calculator-frontend/Dockerfile --tag flipping-calculator-frontend:$(date +%s)
