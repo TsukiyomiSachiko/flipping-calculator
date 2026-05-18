@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useAppStore } from '../stores/appStore';
 import ItemDetailModal from '../components/ItemDetailModal';
 import SystemSettings from '../components/SystemSettings';
+import CashflowSettings from '../components/CashflowSettings';
 
 export default function StatsView() {
   const { data: stats, isLoading, error } = usePortfolioStatistics();
@@ -63,7 +64,7 @@ export default function StatsView() {
       <SystemSettings />
 
       {/* Overview Cards - Always shown */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-4 md:mb-6">
         <StatCard label="Total Volume Traded" value={stats.total_volume_traded?.toLocaleString() || '0'} sub="items" />
         <StatCard label="Total Turnover" value={formatGP(stats.total_turnover || 0)} sub="capital moved" />
         <StatCard
@@ -100,6 +101,7 @@ export default function StatsView() {
             </>
           )}
         </div>
+        <CashflowSettings />
       </div>
 
       {!hasData && (
