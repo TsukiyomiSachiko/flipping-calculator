@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+
 import { useAppStore } from '../stores/appStore';
 
 export default function Navigation() {

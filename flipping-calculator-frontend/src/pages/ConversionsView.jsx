@@ -159,7 +159,7 @@ export default function ConversionsView() {
         ))}
         {filteredConversions?.length === 0 && (
           <div className="card text-center py-12">
-            <p className="text-gray-400">No conversions found matching "{searchTerm}"</p>
+            <p className="text-gray-400">No conversions found matching &quot;{searchTerm}&quot;</p>
           </div>
         )}
       </div>
