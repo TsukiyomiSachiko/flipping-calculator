@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useFlipSearch, useSettings } from '../hooks/useApi';
 import { useAppStore } from '../stores/appStore';
 import LongTermFlipTable from '../components/LongTermFlipTable';
