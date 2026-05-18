@@ -16,7 +16,7 @@ def test_break_even_profitability(mock_fetch):
             {'timestamp': 1000, 'avgHighPrice': 20, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100},
             {'timestamp': 2000, 'avgHighPrice': 20, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100},
             {'timestamp': 3000, 'avgHighPrice': 20, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100},
-            {'timestamp': 4000, 'avgHighPrice': 20, 'avgLowPrice': 19, 'highPriceVolume': 100, 'lowPriceVolume': 100}, # Current
+            {'timestamp': 4000, 'avgHighPrice': 19, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100}, # Current
         ]
     }
     mock_fetch.return_value = mock_data
@@ -44,7 +44,7 @@ def test_already_profitable(mock_fetch):
             {'timestamp': 1000, 'avgHighPrice': 20, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100},
             {'timestamp': 2000, 'avgHighPrice': 20, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100},
             {'timestamp': 3000, 'avgHighPrice': 20, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100},
-            {'timestamp': 4000, 'avgHighPrice': 22, 'avgLowPrice': 21, 'highPriceVolume': 100, 'lowPriceVolume': 100}, # Profitable
+            {'timestamp': 4000, 'avgHighPrice': 21, 'avgLowPrice': 18, 'highPriceVolume': 100, 'lowPriceVolume': 100}, # Profitable
         ]
     }
     mock_fetch.return_value = mock_data
