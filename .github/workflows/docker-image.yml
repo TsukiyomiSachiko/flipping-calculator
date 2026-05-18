@@ -2,7 +2,7 @@ name: Build and Push Docker Images
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
   pull_request:
     branches: [ "main" ]
 
@@ -21,6 +21,7 @@ jobs:
 
     - name: Log in to the Container registry
       uses: docker/login-action@v3
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -36,7 +37,7 @@ jobs:
       with:
         context: ./flipping-calculator-api
         file: ./flipping-calculator-api/Dockerfile
-        push: ${{ github.event_name == 'push' }}
+        push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         tags: |
           ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-api:latest
           ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-api:${{ github.sha }}
@@ -46,7 +47,7 @@ jobs:
       with:
         context: ./flipping-calculator-frontend
         file: ./flipping-calculator-frontend/Dockerfile
-        push: ${{ github.event_name == 'push' }}
+        push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         tags: |
           ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-frontend:latest
           ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-frontend:${{ github.sha }}
