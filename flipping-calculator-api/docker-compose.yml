@@ -15,7 +15,7 @@ services:
       retries: 5
 
   backend:
-    build: .
+    image: ghcr.io/tsukiyomisachiko/flipping-calculator-api:latest
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://flipping_user:flipping_password@db/osrs_flipping
@@ -26,12 +26,22 @@ services:
       - ./data:/app/data
 
   frontend:
-    build: ../flipping-calculator-frontend
+    image: ghcr.io/tsukiyomisachiko/flipping-calculator-frontend:latest
     restart: unless-stopped
     ports:
       - "3080:80"  # Exposed on port 3080 to avoid conflicts with other services
     depends_on:
       - backend
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json:ro
+    command: --interval 300 --cleanup
+    environment:
+      - WATCHTOWER_CLEANUP=true
 
 volumes:
   db_data:

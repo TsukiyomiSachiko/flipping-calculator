@@ -1,20 +1,52 @@
-name: Docker Image CI
+name: Build and Push Docker Images
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-
-  build:
-
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-    - uses: actions/checkout@v6
-    - name: Build the API Docker image
-      run: docker build ./flipping-calculator-api --file ./flipping-calculator-api/Dockerfile --tag flipping-calculator-api:$(date +%s)
-    - name: Build the Frontend Docker image
-      run: docker build ./flipping-calculator-frontend --file ./flipping-calculator-frontend/Dockerfile --tag flipping-calculator-frontend:$(date +%s)
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Lowercase repository name
+      run: |
+        REPO_LOWERCASE=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+        echo "REPO_LOWERCASE=$REPO_LOWERCASE" >> $GITHUB_ENV
+        
+    - name: Build and push API image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./flipping-calculator-api
+        file: ./flipping-calculator-api/Dockerfile
+        push: ${{ github.event_name == 'push' }}
+        tags: |
+          ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-api:latest
+          ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-api:${{ github.sha }}
+
+    - name: Build and push Frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./flipping-calculator-frontend
+        file: ./flipping-calculator-frontend/Dockerfile
+        push: ${{ github.event_name == 'push' }}
+        tags: |
+          ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-frontend:latest
+          ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-frontend:${{ github.sha }}
