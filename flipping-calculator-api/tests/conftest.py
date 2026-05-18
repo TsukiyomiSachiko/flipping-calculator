@@ -81,7 +81,9 @@ def account_id(setup_test_db):
 
 @pytest.fixture
 def auth_header(account_id):
-    return {"X-Account-Id": str(account_id)}
+    from app.utils.security import create_access_token
+    token = create_access_token({"sub": "QueenieTsuki", "id": account_id})
+    return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture(scope="session")
 def synced_items(setup_test_db):

@@ -221,6 +221,24 @@ class PortfolioService:
                 VALUES (?, 'sell', 'trade', ?, ?, ?)
             ''', (flip_id, sell_qty, price_per_item, notes))
             # Update flip
+
+            # Cashflow adjustment
+            user_settings = SettingsService.get_settings(account_id)
+            profit_take_pct = user_settings.get('profit_take_pct', 0.0)
+            loss_refill_pct = user_settings.get('loss_refill_pct', 0.0)
+
+            sell_revenue = sell_qty * (price_per_item - ge_tax)
+
+            # Adjustment based on profit/loss
+            if profit_this_sale > 0 and profit_take_pct > 0:
+                adjustment = -int(profit_this_sale * (profit_take_pct / 100.0))
+            elif profit_this_sale < 0 and loss_refill_pct > 0:
+                adjustment = int(abs(profit_this_sale) * (loss_refill_pct / 100.0))
+            else:
+                adjustment = 0
+
+            adjusted_revenue = sell_revenue + adjustment
+
             if new_remaining == 0:
                 intended_qty = flip['intended_quantity'] if 'intended_quantity' in flip.keys() else None
                 total_bought = flip['quantity_total']
@@ -247,9 +265,8 @@ class PortfolioService:
                         WHERE id = ?
                     ''', (price_per_item, now, total_profit, roi, now, flip_id))
                     status_msg = f"partially_completed (sold all {total_bought}, target was {intended_qty})"
-                sell_revenue = sell_qty * (price_per_item - ge_tax)
                 conn.commit()
-                SettingsService.adjust_cash(account_id, sell_revenue, f"Sell: {sell_qty}x @ {price_per_item}")
+                SettingsService.adjust_cash(account_id, adjusted_revenue, f"Sell: {sell_qty}x @ {price_per_item}")
                 return {
                     "flip_id": flip_id,
                     "sold_quantity": sell_qty,
@@ -287,9 +304,8 @@ class PortfolioService:
                             last_sell_at = ?
                         WHERE id = ?
                     ''', (new_remaining, total_profit, avg_sell_price, new_status, now, flip_id))
-                sell_revenue = sell_qty * (price_per_item - ge_tax)
                 conn.commit()
-                SettingsService.adjust_cash(account_id, sell_revenue, f"Sell: {sell_qty}x @ {price_per_item}")
+                SettingsService.adjust_cash(account_id, adjusted_revenue, f"Sell: {sell_qty}x @ {price_per_item}")
                 return {
                     "flip_id": flip_id,
                     "sold_quantity": sell_qty,
