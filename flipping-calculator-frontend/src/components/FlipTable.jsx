@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { formatGP, formatExactGP, formatPercent, getVolumeIndicator } from '../utils/formatters';
 
-export default function FlipTable({ flips, onSelectFlip, onShowDetail }) {
+const FlipTable = React.memo(function FlipTable({ flips, onSelectFlip, onShowDetail }) {
   const [expandedRows, setExpandedRows] = useState({});
 
   const toggleRow = (rowId) => {
@@ -137,18 +137,18 @@ export default function FlipTable({ flips, onSelectFlip, onShowDetail }) {
       />
     </>
   );
-}
+});
 
-function MobileField({ label, value, color = 'text-white' }) {
+const MobileField = React.memo(function MobileField({ label, value, color = 'text-white' }) {
   return (
     <div>
       <p className="text-xs text-gray-400">{label}</p>
       <p className={`font-medium text-sm ${color}`}>{value}</p>
     </div>
   );
-}
+});
 
-function DesktopTable({ flips, expandedRows, toggleRow, onSelectFlip, onShowDetail }) {
+const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, toggleRow, onSelectFlip, onShowDetail }) {
   const columns = useMemo(
     () => [
       {
@@ -398,4 +398,6 @@ function DesktopTable({ flips, expandedRows, toggleRow, onSelectFlip, onShowDeta
       </table>
     </div>
   );
-}
+});
+
+export default FlipTable;
