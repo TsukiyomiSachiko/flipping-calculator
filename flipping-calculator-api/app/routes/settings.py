@@ -14,6 +14,11 @@ class SetCashRequest(BaseModel):
     amount: int
 
 
+class SetCashflowSettingsRequest(BaseModel):
+    profit_take_pct: float
+    loss_refill_pct: float
+
+
 @router.get("/settings")
 async def get_settings(account_id: int = Depends(get_account_id)):
     """Get user settings including available cash"""
@@ -26,3 +31,10 @@ async def set_available_cash(request: SetCashRequest, account_id: int = Depends(
     Set available cash for flipping
     """
     return SettingsService.set_available_cash(account_id, request.amount)
+
+@router.post("/settings/cashflow")
+async def set_cashflow_settings(request: SetCashflowSettingsRequest, account_id: int = Depends(get_account_id)):
+    """
+    Set cashflow settings (profit take % and loss refill %)
+    """
+    return SettingsService.set_cashflow_settings(account_id, request.profit_take_pct, request.loss_refill_pct)

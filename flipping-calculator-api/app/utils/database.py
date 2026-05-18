@@ -308,6 +308,8 @@ def init_database():
                 id {pk_type},
                 account_id INTEGER NOT NULL UNIQUE,
                 available_cash BIGINT DEFAULT 0,
+                profit_take_pct FLOAT DEFAULT 0,
+                loss_refill_pct FLOAT DEFAULT 0,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (account_id) REFERENCES accounts(id)
             )

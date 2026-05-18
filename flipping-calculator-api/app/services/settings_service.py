@@ -22,14 +22,54 @@ class SettingsService:
             if not row:
                 # Initialize if missing
                 cursor.execute('''
-                    INSERT INTO user_settings (account_id, available_cash) 
-                    VALUES (?, 0)
+                    INSERT INTO user_settings (account_id, available_cash, profit_take_pct, loss_refill_pct)
+                    VALUES (?, 0, 0, 0)
                 ''', (account_id,))
                 conn.commit()
-                return {"account_id": account_id, "available_cash": 0, "last_updated": datetime.now(timezone.utc).isoformat()}
+                return {
+                    "account_id": account_id,
+                    "available_cash": 0,
+                    "profit_take_pct": 0.0,
+                    "loss_refill_pct": 0.0,
+                    "last_updated": datetime.now(timezone.utc).isoformat()
+                }
             
-            return dict(row)
+            # Ensure the row has the new fields even if migration hasn't run or default is somehow None
+            result = dict(row)
+            if 'profit_take_pct' not in result or result['profit_take_pct'] is None:
+                result['profit_take_pct'] = 0.0
+            if 'loss_refill_pct' not in result or result['loss_refill_pct'] is None:
+                result['loss_refill_pct'] = 0.0
+
+            return result
     
+    @staticmethod
+    def set_cashflow_settings(account_id: int, profit_take_pct: float, loss_refill_pct: float) -> Dict:
+        """
+        Set cashflow settings for profits and losses
+
+        Args:
+            account_id: ID of the account
+            profit_take_pct: Percentage of profit to keep
+            loss_refill_pct: Percentage of loss to refill
+
+        Returns:
+            Updated settings
+        """
+        # Ensure row exists first
+        SettingsService.get_settings(account_id)
+
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE user_settings
+                SET profit_take_pct = ?, loss_refill_pct = ?, last_updated = ?
+                WHERE account_id = ?
+            ''', (profit_take_pct, loss_refill_pct, datetime.now(timezone.utc), account_id))
+            conn.commit()
+
+        return SettingsService.get_settings(account_id)
+
     @staticmethod
     def set_available_cash(account_id: int, amount: int) -> Dict:
         """
