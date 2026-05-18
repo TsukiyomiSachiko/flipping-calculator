@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build the API Docker image
       run: docker build ./flipping-calculator-api --file ./flipping-calculator-api/Dockerfile --tag flipping-calculator-api:$(date +%s)
     - name: Build the Frontend Docker image
