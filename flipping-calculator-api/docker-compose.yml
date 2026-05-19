@@ -13,6 +13,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   backend:
     image: ghcr.io/tsukiyomisachiko/flipping-calculator/flipping-calculator-api:latest
@@ -24,6 +26,8 @@ services:
         condition: service_healthy
     volumes:
       - ./data:/app/data
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   frontend:
     image: ghcr.io/tsukiyomisachiko/flipping-calculator/flipping-calculator-frontend:latest
@@ -32,6 +36,8 @@ services:
       - "3080:80"  # Exposed on port 3080 to avoid conflicts with other services
     depends_on:
       - backend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   watchtower:
     image: containrrr/watchtower
@@ -39,7 +45,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/.docker/config.json:/config.json:ro
-    command: --interval 300 --cleanup
+    command: --interval 300 --cleanup --label-enable
     environment:
       - WATCHTOWER_CLEANUP=true
       - DOCKER_API_VERSION=1.40
