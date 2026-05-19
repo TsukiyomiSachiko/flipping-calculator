@@ -63,14 +63,16 @@ class TrajectoryService:
         alpha = {'5m': 0.15, '1h': 0.25, '6h': 0.35}.get(timestep, 0.25)
         smoothed = TrajectoryService._ewma(midpoints, alpha)
 
-        # --- Step 2: Weighted linear regression ---
-        slope, intercept = TrajectoryService._weighted_regression(smoothed, recent_bias=2.0)
+        # --- Step 2: Weighted linear regression (on recent window only) ---
+        regression_window = max(30, int(n * 0.35))
+        slope, intercept = TrajectoryService._weighted_regression(smoothed[-regression_window:], recent_bias=2.0)
 
         # --- Step 3: Volatility ---
         volatility = TrajectoryService._volatility(midpoints)
 
         # --- Step 4: Trend classification ---
-        avg_price = sum(midpoints) / n
+        recent_midpoints = midpoints[-regression_window:]
+        avg_price = sum(recent_midpoints) / len(recent_midpoints)
         slope_pct = (slope / avg_price) * 100 if avg_price > 0 else 0
         trend = TrajectoryService._classify_trend(slope_pct)
 
@@ -90,10 +92,10 @@ class TrajectoryService:
 
         # Projection points
         projection = []
+        current_smoothed = smoothed[-1]
         for j in range(1, projection_steps + 1):
-            idx = n - 1 + j
             proj_ts = int(timestamps[-1] + avg_interval * j)
-            proj_value = intercept + slope * idx
+            proj_value = current_smoothed + slope * j
             band_width = volatility * math.sqrt(j) * 1.5
 
             projection.append({
@@ -104,8 +106,7 @@ class TrajectoryService:
             })
 
         # --- Step 6: Summary stats ---
-        current_smoothed = smoothed[-1]
-        projected_end = intercept + slope * (n - 1 + projection_steps)
+        projected_end = current_smoothed + slope * projection_steps
         projected_change = projected_end - current_smoothed
         projected_change_pct = (projected_change / current_smoothed * 100) if current_smoothed > 0 else 0
 
