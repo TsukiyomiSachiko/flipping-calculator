@@ -79,6 +79,34 @@ The schema includes:
 - `flip_transactions`: Granular buy/sell log.
 - `user_settings`: Cash stack and configurations.
 
+### Database Migrations (Alembic)
+The database schema is managed using **Alembic**.
+
+#### 1. Automatic Execution
+Migrations are programmatically run on application startup (via the FastAPI startup/lifespan lifecycle hook). When the backend starts up, it automatically runs:
+- **Auto-Stamping Check**: If legacy database tables exist but the `alembic_version` tracking table is absent, the database is programmatically stamped at the baseline revision (`008_baseline`).
+- **Migration Upgrades**: It runs `alembic upgrade head` to apply any pending migration scripts.
+
+This ensures the database remains up-to-date in production without manual command execution.
+
+#### 2. Local/Manual Execution
+During development, you can inspect or run migrations manually using the virtual environment inside the `flipping-calculator-api` directory:
+- **Run migrations**:
+  ```bash
+  ./venv/bin/alembic upgrade head
+  ```
+- **Check current database revision**:
+  ```bash
+  ./venv/bin/alembic current
+  ```
+- **Generate a new migration script**:
+  ```bash
+  ./venv/bin/alembic revision -m "description_of_changes"
+  ```
+
+#### 3. Legacy Migrations
+Older script-based migrations are located in the `migrations/` directory. These have been consolidated into Alembic's initial `008_baseline` revision. Going forward, all new schema changes should be added as Alembic migrations in `alembic/versions/` rather than standalone scripts.
+
 ### Migrating from CLI to API
 If you previously used the CLI version of this tool, the database schema is 100% compatible! Simply copy your existing `osrs_flipping.db` into the `data/` folder before starting the API server.
 
