@@ -411,6 +411,75 @@ def init_database():
             cursor.execute("INSERT INTO accounts (name) VALUES ('Main')")
         
     logger.info("✅ Database initialized successfully!")
+    
+    # Run Alembic migrations programmatically
+    run_migrations()
+
+
+def run_migrations():
+    """Programmatically run Alembic migrations on startup with auto-stamping"""
+    import os
+    from alembic.config import Config
+    from alembic import command
+    
+    # Determine if database already exists but is unstamped
+    is_sqlite = 'sqlite' in str(engine.url)
+    tables_exist = False
+    alembic_exists = False
+    
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            if is_sqlite:
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_flips'")
+                tables_exist = cursor.fetchone() is not None
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'")
+                alembic_exists = cursor.fetchone() is not None
+            else:
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'user_flips'
+                    )
+                """)
+                tables_exist = cursor.fetchone()[0]
+                
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'alembic_version'
+                    )
+                """)
+                alembic_exists = cursor.fetchone()[0]
+    except Exception as e:
+        logger.warning(f"Error checking database tables: {e}. Assuming new database.")
+    
+    # Find path to alembic.ini relative to project root
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    ini_path = os.path.join(project_root, 'alembic.ini')
+    
+    logger.info(f"Loading Alembic config from: {ini_path}")
+    alembic_cfg = Config(ini_path)
+    
+    # If the database tables exist but the alembic_version table does not,
+    # we stamp the database with 008_baseline (representing the existing schema)
+    if tables_exist and not alembic_exists:
+        logger.info("Database tables exist but no Alembic history found. Stamping database with '008_baseline'...")
+        try:
+            command.stamp(alembic_cfg, "008_baseline")
+            logger.info("Successfully stamped database with '008_baseline'")
+        except Exception as e:
+            logger.error(f"Failed to stamp database: {e}")
+            raise
+            
+    # Run upgrade head
+    logger.info("Running database migrations (alembic upgrade head)...")
+    try:
+        command.upgrade(alembic_cfg, "head")
+        logger.info("✅ Database migrations completed successfully!")
+    except Exception as e:
+        logger.error(f"❌ Database migrations failed: {e}")
+        raise
 
 
 def test_connection():
