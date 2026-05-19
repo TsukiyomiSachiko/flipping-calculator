@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.services.data_quality_service import DataQualityService
 
 def test_check_price_floor():
@@ -119,7 +119,7 @@ def test_prewarm_cache(mock_get_all, mock_get_db):
     base_time = datetime.now(timezone.utc)
     for i in range(30):
         history_rows.append({
-            "timestamp": base_time,
+            "timestamp": base_time + timedelta(hours=i),
             "price_high": 1000 + i * 2,
             "price_low": 980 + i * 2
         })
