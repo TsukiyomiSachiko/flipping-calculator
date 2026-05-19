@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app):
+    # Invalidate all API caches on startup/reboot
+    logger.info("Invalidating API caches on startup...")
+    try:
+        from app.utils.api_client import clear_all_caches
+        clear_all_caches()
+    except Exception as e:
+        logger.error(f"Failed to clear API caches on startup: {e}")
+
     # Initialize database (includes running migrations if needed)
     init_database()
     
