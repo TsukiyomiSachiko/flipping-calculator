@@ -260,11 +260,16 @@ class DataQualityService:
         if not rows:
             return None
             
-        for i, r in enumerate(rows):
+        t_zero = None
+        for r in rows:
             if r['price_high'] is not None and r['price_low'] is not None:
                 mid = (r['price_high'] + r['price_low']) / 2.0
                 if mid > 0:
-                    valid_points.append((i, mid))
+                    ts = r['timestamp']
+                    ts_val = ts.timestamp() if isinstance(ts, datetime) else float(ts)
+                    if t_zero is None:
+                        t_zero = ts_val
+                    valid_points.append((ts_val - t_zero, mid))
                     
         n = len(valid_points)
         if n < 24:  # require at least 24 valid data points
@@ -282,11 +287,11 @@ class DataQualityService:
         m = (n * sum_xy - sum_x * sum_y) / denominator
         b = (sum_y - m * sum_x) / n
         
-        # Calculate expected growth over the next 7 days (168 hours)
+        # Calculate expected growth over the next 7 days (604,800 seconds)
         current_x = valid_points[-1][0]
         
         current_trend_price = m * current_x + b
-        future_trend_price = m * (current_x + 168) + b
+        future_trend_price = m * (current_x + 604800) + b
         
         if current_trend_price <= 0:
             return 0.0
