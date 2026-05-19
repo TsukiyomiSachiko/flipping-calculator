@@ -39,6 +39,16 @@ class CacheManager:
         if os.path.exists(cache_path):
             os.remove(cache_path)
 
+    def clear_all(self):
+        """Delete all cached files in the cache directory"""
+        if os.path.exists(CACHE_DIR):
+            for file in os.listdir(CACHE_DIR):
+                if file.endswith('.json'):
+                    try:
+                        os.remove(os.path.join(CACHE_DIR, file))
+                    except Exception:
+                        pass
+
 cache = CacheManager()
 
 def fetch_item_mapping(use_cache: bool = True) -> Dict:
@@ -141,8 +151,4 @@ def fetch_price_timeseries(item_id: int, timestep: str = '5m') -> Dict:
 
 def clear_all_caches():
     """Clear all cached data"""
-    cache.clear('latest_prices')
-    cache.clear('1h_volume')
-    cache.clear('5m_volume')
-    cache.clear('item_mapping')
-    # Note: timeseries caches are item-specific and cleared automatically by age
+    cache.clear_all()
