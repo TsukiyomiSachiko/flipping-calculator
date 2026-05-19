@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFlipSearch, useTrendingFlips, useSettings } from '../hooks/useApi';
 import { useAppStore } from '../stores/appStore';
 import FlipSearchFilters from '../components/FlipSearchFilters';
@@ -60,6 +60,10 @@ export default function FlipsView() {
     setTrendingParams({ cash: filters.cash, limit: 10 });
   };
 
+  const handleShowPriceHistory = useCallback((item) => {
+    setPriceHistoryItem({ id: item.id, name: item.name });
+  }, []);
+
   return (
     <div>
       <div className="card mb-4 md:mb-6">
@@ -98,7 +102,7 @@ export default function FlipsView() {
           <FlipTable 
             flips={data.flips} 
             onSelectFlip={setSelectedFlip}
-            onShowPriceHistory={(item) => setPriceHistoryItem({ id: item.id, name: item.name })}
+            onShowPriceHistory={handleShowPriceHistory}
             onShowDetail={setDetailItem}
           />
         </>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useFlipSearch, useSettings } from '../hooks/useApi';
 import { useAppStore } from '../stores/appStore';
 import LongTermFlipTable from '../components/LongTermFlipTable';
@@ -22,6 +22,10 @@ export default function LongTermFlipsView() {
   };
 
   const { data: searchData, isLoading: searchLoading, error: searchError } = useFlipSearch(searchParams);
+
+  const handleShowPriceHistory = useCallback((item) => {
+    setPriceHistoryItem({ id: item.id, name: item.name });
+  }, []);
 
   return (
     <div>
@@ -61,7 +65,7 @@ export default function LongTermFlipsView() {
           <LongTermFlipTable 
             flips={searchData.flips} 
             onSelectFlip={setSelectedFlip}
-            onShowPriceHistory={(item) => setPriceHistoryItem({ id: item.id, name: item.name })}
+            onShowPriceHistory={handleShowPriceHistory}
             onShowDetail={setDetailItem}
           />
         </>
