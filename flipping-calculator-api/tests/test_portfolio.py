@@ -25,6 +25,8 @@ def test_portfolio_flow(client, synced_items, auth_header):
     assert response.status_code == 200
     pending = response.json()
     assert any(f["id"] == flip_id for f in pending)
+    flip = next(f for f in pending if f["id"] == flip_id)
+    assert flip["break_even_price"] == 153
     
     # 4. Log a sell (partial)
     sell_data = {
@@ -115,6 +117,8 @@ def test_portfolio_advanced_operations(client, synced_items, auth_header):
         projections = response.json()
         assert "flips" in projections
         assert any(f["id"] == flip_id for f in projections["flips"])
+        proj_flip = next(f for f in projections["flips"] if f["id"] == flip_id)
+        assert proj_flip["break_even_price"] == 153
 
     # 3. Update the buy price for the pending flip
     response = client.patch(f"/api/portfolio/flip/{flip_id}/buy-price", json={"new_price": 145}, headers=auth_header)

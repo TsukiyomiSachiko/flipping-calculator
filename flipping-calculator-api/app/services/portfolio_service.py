@@ -17,6 +17,24 @@ def calculate_ge_tax(price: int) -> int:
         return 0
     tax = int(price * 0.02)
     return min(tax, 5_000_000)  # Cap at 5M
+
+
+def calculate_break_even_price(buy_price: int) -> int:
+    """
+    Calculate the minimum sell price to break even after Grand Exchange tax.
+    S - tax(S) >= buy_price
+    """
+    if buy_price <= 50:
+        return buy_price
+    if buy_price >= 245_000_000:
+        return buy_price + 5_000_000
+    
+    # 2% tax case:
+    # S - floor(S/50) = B
+    # Smallest S is 50 * floor(B/49) + (B % 49)
+    k_b = buy_price // 49
+    r_b = buy_price % 49
+    return 50 * k_b + r_b
 class PortfolioService:
     @staticmethod
     def log_buy(account_id: int, item_name: str, quantity: int, price: int, intended_quantity: Optional[int] = None, 
@@ -489,7 +507,10 @@ class PortfolioService:
                 WHERE account_id = ? AND status IN ('pending', 'partially_completed')
                 ORDER BY buy_time DESC
             ''', (account_id,))
-            return [dict(row) for row in cursor.fetchall()]
+            flips = [dict(row) for row in cursor.fetchall()]
+            for flip in flips:
+                flip['break_even_price'] = calculate_break_even_price(flip['buy_price'])
+            return flips
     @staticmethod
     def get_pending_with_projections(account_id: int) -> Dict:
         """Get pending and partially_completed flips enriched for an account"""
@@ -501,6 +522,8 @@ class PortfolioService:
                 ORDER BY buy_time DESC
             ''', (account_id,))
             flips = [dict(row) for row in cursor.fetchall()]
+            for flip in flips:
+                flip['break_even_price'] = calculate_break_even_price(flip['buy_price'])
         if not flips:
             return {"flips": [], "total_projected_profit": 0, "total_current_value": 0, "total_invested": 0}
         latest_data = fetch_latest_prices(use_cache=True)
@@ -573,7 +596,10 @@ class PortfolioService:
                 ORDER BY sell_time DESC
                 LIMIT ?
             ''', (account_id, limit))
-            return [dict(row) for row in cursor.fetchall()]
+            flips = [dict(row) for row in cursor.fetchall()]
+            for flip in flips:
+                flip['break_even_price'] = calculate_break_even_price(flip['buy_price'])
+            return flips
     @staticmethod
     def get_cancelled_flips(account_id: int, limit: int = 20) -> List[Dict]:
         """Get cancelled flips for an account"""
@@ -585,7 +611,10 @@ class PortfolioService:
                 ORDER BY sell_time DESC
                 LIMIT ?
             ''', (account_id, limit))
-            return [dict(row) for row in cursor.fetchall()]
+            flips = [dict(row) for row in cursor.fetchall()]
+            for flip in flips:
+                flip['break_even_price'] = calculate_break_even_price(flip['buy_price'])
+            return flips
     @staticmethod
     def get_recent_mutations(account_id: int, limit: int = 50) -> List[Dict]:
         """Get the most recent mutations/transactions across all flips for an account"""
