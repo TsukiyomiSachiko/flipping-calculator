@@ -148,7 +148,7 @@ class FlipService:
             expected_roi_7d = None
             expected_sell_price = None
 
-            if trajectory is not None:
+            if trajectory is not None and trajectory > 0.0:
                 expected_sell_price = int(sell_price * (1 + trajectory / 100))
                 
                 tax = calculate_ge_tax(expected_sell_price)
