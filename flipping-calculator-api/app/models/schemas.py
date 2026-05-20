@@ -80,6 +80,7 @@ class FlipResponse(BaseModel):
     status: str
     cancel_reason: Optional[str] = None
     notes: Optional[str] = None
+    break_even_price: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 

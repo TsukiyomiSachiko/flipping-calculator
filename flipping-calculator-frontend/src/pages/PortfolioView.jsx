@@ -368,6 +368,12 @@ export default function PortfolioView() {
                             </button>
                           </div>
                         </div>
+                        {flip.break_even_price && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Break-Even Price:</span>
+                            <span className="text-yellow-400 font-medium">{formatExactGP(flip.break_even_price)}</span>
+                          </div>
+                        )}
                         {flip.intended_sell_price && (
                           <div className="flex justify-between">
                             <span className="text-gray-400">Target Sell Price:</span>
