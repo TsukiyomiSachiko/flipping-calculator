@@ -6,3 +6,7 @@
 ## 2026-05-19 - React.memo Invalidated by Inline Functions
 **Learning:** Even if heavy list components (like FlipTable) are wrapped in `React.memo`, passing inline functions (e.g., `onShowPriceHistory={(item) => ...}`) from parent components completely invalidates the memoization. This is because a new function reference is created on every parent render, forcing the heavy child component to re-render.
 **Action:** When passing callbacks to memoized heavy components, ALWAYS wrap them in `useCallback` to preserve function references and maintain the `React.memo` optimization.
+
+## 2026-05-20 - In-Memory Caching for File-Based API Reponses
+**Learning:** The application's `CacheManager` was reading JSON responses from disk for every backend API request when serving cached data. This led to thousands of repetitive disk reads (JSON parsing and I/O) on hot paths like `FlipService.get_profitable_flips`, becoming a major bottleneck specific to this architecture.
+**Action:** Always complement file-based caches with an in-memory dictionary layer that checks `os.path.getmtime` to determine if a fresh disk read is truly necessary, vastly accelerating high-frequency API endpoints without sacrificing data freshness.
