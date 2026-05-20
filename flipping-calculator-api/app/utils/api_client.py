@@ -2,6 +2,7 @@ import requests
 from typing import Dict, Optional
 import json
 import os
+import copy
 from datetime import datetime, timedelta, timezone
 
 API_ENDPOINT = "https://prices.runescape.wiki/api/v1/osrs"
@@ -11,6 +12,7 @@ CACHE_DIR = os.getenv("API_CACHE_DIR", "data/cache")
 class CacheManager:
     def __init__(self):
         os.makedirs(CACHE_DIR, exist_ok=True)
+        self._mem_cache = {}
     
     def get_cache_path(self, key: str) -> str:
         return os.path.join(CACHE_DIR, f"{key}.json")
@@ -22,22 +24,31 @@ class CacheManager:
             return None
         
         # Check age
-        file_time = datetime.fromtimestamp(os.path.getmtime(cache_path), tz=timezone.utc)
+        mtime = os.path.getmtime(cache_path)
+        file_time = datetime.fromtimestamp(mtime, tz=timezone.utc)
         if datetime.now(timezone.utc) - file_time > timedelta(minutes=max_age_minutes):
             return None
+
+        # Check in-memory cache
+        if key in self._mem_cache and self._mem_cache[key]['mtime'] == mtime:
+            return copy.deepcopy(self._mem_cache[key]['data'])
         
         with open(cache_path, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            self._mem_cache[key] = {'mtime': mtime, 'data': data}
+            return copy.deepcopy(data)
     
     def set(self, key: str, data: Dict):
         cache_path = self.get_cache_path(key)
         with open(cache_path, 'w') as f:
             json.dump(data, f)
+        self._mem_cache[key] = {'mtime': os.path.getmtime(cache_path), 'data': copy.deepcopy(data)}
     
     def clear(self, key: str):
         cache_path = self.get_cache_path(key)
         if os.path.exists(cache_path):
             os.remove(cache_path)
+        self._mem_cache.pop(key, None)
 
     def clear_all(self):
         """Delete all cached files in the cache directory"""
@@ -48,6 +59,7 @@ class CacheManager:
                         os.remove(os.path.join(CACHE_DIR, file))
                     except Exception:
                         pass
+        self._mem_cache.clear()
 
 cache = CacheManager()
 
