@@ -111,3 +111,47 @@ def test_get_item_with_prices(client, synced_items, auth_header):
         data = response.json()
 
         assert data["name"] == "Abyssal whip"
+
+
+def test_calculate_long_term_score():
+    from app.services.item_service import ItemService
+    
+    # Positive trajectory: should return a positive score
+    score = ItemService.calculate_long_term_score(
+        profit=100,
+        roi=10.0,
+        volume=5000,
+        trajectory=5.0,
+        volatility=1.0
+    )
+    assert score > 0.0
+    
+    # Trajectory is None: should return 0.0
+    score_none = ItemService.calculate_long_term_score(
+        profit=100,
+        roi=10.0,
+        volume=5000,
+        trajectory=None,
+        volatility=1.0
+    )
+    assert score_none == 0.0
+    
+    # Trajectory is <= 0.0: should return 0.0
+    score_flat = ItemService.calculate_long_term_score(
+        profit=100,
+        roi=10.0,
+        volume=5000,
+        trajectory=0.0,
+        volatility=1.0
+    )
+    assert score_flat == 0.0
+
+    score_neg = ItemService.calculate_long_term_score(
+        profit=100,
+        roi=10.0,
+        volume=5000,
+        trajectory=-1.0,
+        volatility=1.0
+    )
+    assert score_neg == 0.0
+

@@ -253,25 +253,16 @@ class ItemService:
           - If volume < 1000 (per day/hour depending on metric): score is heavily reduced.
           - If trajectory is < -5%: score is 0.
         """
-        if profit <= 0 or volume <= 0:
+        if profit <= 0 or volume <= 0 or trajectory is None or trajectory <= 0.0:
             return 0.0
             
         # --- Trajectory Score (0-100) ---
-        if trajectory is not None:
-            if trajectory <= -5.0:
-                # Catching falling knives is bad for passive holding
-                return 0.0
-            elif trajectory <= 0.0:
-                # Slight dip or flat
-                traj_score = 30 + ((trajectory + 5.0) / 5.0) * 20
-            elif trajectory <= 15.0:
-                # Steady climb (0 to +15%)
-                traj_score = 50 + (trajectory / 15.0) * 50
-            else:
-                # Over 15%: Might be a pump and dump, cap it
-                traj_score = 100
+        if trajectory <= 15.0:
+            # Steady climb (0 to +15%)
+            traj_score = 50 + (trajectory / 15.0) * 50
         else:
-            traj_score = 50  # Neutral if unknown
+            # Over 15%: Might be a pump and dump, cap it
+            traj_score = 100
 
         # --- Volatility Penalty (0 to 100 subtracted) ---
         # A stable item has ~1-2% volatility. >5% is very chaotic.
