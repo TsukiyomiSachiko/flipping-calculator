@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { itemsApi, flipsApi, portfolioApi, settingsApi, priceHistoryApi, conversionsApi, marginsApi } from '../services/api';
+import { itemsApi, flipsApi, portfolioApi, settingsApi, priceHistoryApi, alchApi, marginsApi } from '../services/api';
 import { useAppStore } from '../stores/appStore';
 import api from '../services/api';
 
@@ -373,25 +373,15 @@ export const useTriggerPoll = () => {
   });
 };
 
-// Conversions hooks
-export const useConversions = () => {
+// High-Alchemy hooks
+export const useProfitableAlchs = (minVolume = 1) => {
   return useQuery({
-    queryKey: ['conversions'],
+    queryKey: ['profitableAlchs', minVolume],
     queryFn: async () => {
-      const response = await conversionsApi.getAll();
+      const response = await alchApi.getProfitable({ min_volume: minVolume });
       return response.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-export const useConversionSync = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: conversionsApi.sync,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversions'] });
-    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 

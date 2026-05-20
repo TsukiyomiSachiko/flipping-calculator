@@ -5,7 +5,7 @@ import LongTermFlipsView from './pages/LongTermFlipsView';
 import PortfolioView from './pages/PortfolioView';
 import HistoryView from './pages/HistoryView';
 import StatsView from './pages/StatsView';
-import ConversionsView from './pages/ConversionsView';
+import HighAlchView from './pages/HighAlchView';
 import LoginView from './pages/LoginView';
 import ConfirmModal from './components/ConfirmModal';
 import { useAppStore } from './stores/appStore';
@@ -84,7 +84,7 @@ function App() {
         {/* Main Content */}
         {activeView === 'flips' && <FlipsView />}
         {activeView === 'longterm' && <LongTermFlipsView />}
-        {activeView === 'conversions' && <ConversionsView />}
+        {activeView === 'highalch' && <HighAlchView />}
         {activeView === 'portfolio' && <PortfolioView />}
         {activeView === 'history' && <HistoryView />}
         {activeView === 'stats' && <StatsView />}

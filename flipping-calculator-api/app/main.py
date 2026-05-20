@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.routes import items, portfolio, flips, price_history, trajectory, price_history_routes, margin_routes, liquidity, settings, accounts, conversions, auth, sync
+from app.routes import items, portfolio, flips, price_history, trajectory, price_history_routes, margin_routes, liquidity, settings, accounts, alch, auth, sync
 from app.utils.database import init_database
 from app.services.price_polling_service import price_polling_service
 from app.services.data_compression_service import data_compression_service
@@ -65,7 +65,7 @@ app.include_router(margin_routes.router, prefix="/api", tags=["Margin Tracking"]
 app.include_router(liquidity.router, prefix="/api", tags=["Liquidity Analysis"])
 app.include_router(settings.router, prefix="/api", tags=["Settings"])
 app.include_router(accounts.router, prefix="/api/accounts", tags=["Accounts"])
-app.include_router(conversions.router, prefix="/api/conversions", tags=["Conversions"])
+app.include_router(alch.router, prefix="/api", tags=["High Alchemy"])
 app.include_router(sync.router, prefix="/api", tags=["Database Synchronization"])
 
 @app.get("/")
