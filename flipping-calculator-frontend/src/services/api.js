@@ -86,10 +86,9 @@ export const flipsApi = {
   getStats: () => api.get('/api/flips/stats'),
 };
 
-// Conversions API
-export const conversionsApi = {
-  getAll: () => api.get('/api/conversions'),
-  sync: () => api.post('/api/conversions/sync'),
+// High-Alchemy API
+export const alchApi = {
+  getProfitable: (params) => api.get('/api/alch/profitable', { params }),
 };
 
 // Portfolio API
