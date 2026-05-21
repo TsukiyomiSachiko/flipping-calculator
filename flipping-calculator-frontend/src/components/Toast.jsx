@@ -21,6 +21,7 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
         <button
           onClick={onClose}
           className="text-white hover:text-gray-200 text-xl leading-none"
+          aria-label="Close notification"
         >
           ✕
         </button>

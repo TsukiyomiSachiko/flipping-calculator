@@ -66,6 +66,7 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
           <button
             className="text-luxury-purpleLight hover:text-luxury-gold text-2xl transition-colors duration-200"
             onClick={onClose}
+            aria-label="Close modal"
           >
             ✕
           </button>
