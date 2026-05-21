@@ -87,6 +87,7 @@ export default function FlipSearchFilters({ onSearch }) {
             <option value="score">Score</option>
             <option value="risk_adjusted">Risk-Adjusted Score</option>
             <option value="crash_risk">Crash Risk</option>
+            <option value="risk_reward">Risk/Reward Ratio</option>
             <option value="erebus">Erebus Score</option>
             <option value="quality">Data Quality</option>
           </select>

@@ -257,6 +257,8 @@ class FlipService:
             profitable_items.sort(key=lambda x: x['risk_adjusted_score'], reverse=True)
         elif sort_by == 'crash_risk':
             profitable_items.sort(key=lambda x: (x.get('crash_risk_score') is None, x.get('crash_risk_score') or 999.0, -(x.get('score') or 0)))
+        elif sort_by == 'risk_reward':
+            profitable_items.sort(key=lambda x: (x.get('risk_to_reward_ratio') is None, x.get('risk_to_reward_ratio') or 999.0, -(x.get('score') or 0)))
         elif sort_by == 'erebus':
             profitable_items.sort(key=lambda x: (x['secondary_score'] is not None, x['secondary_score'] or 0), reverse=True)
         elif sort_by == 'long_term':
