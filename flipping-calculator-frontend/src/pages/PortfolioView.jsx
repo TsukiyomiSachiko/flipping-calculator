@@ -9,6 +9,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AddBuyModal from '../components/AddBuyModal';
 import EditBuyPriceModal from '../components/EditBuyPriceModal';
 import Toast from '../components/Toast';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { formatGP, formatExactGP, formatDateTime, formatPercent } from '../utils/formatters';
 
 export default function PortfolioView() {
@@ -253,8 +254,8 @@ export default function PortfolioView() {
     return (
       <div>
         <PortfolioSummary />
-        <div className="card text-center py-12">
-          <p className="text-gray-400">Loading portfolio...</p>
+        <div className="card py-12 flex justify-center items-center">
+          <LoadingSpinner message="Loading portfolio..." />
         </div>
       </div>
     );
@@ -271,19 +272,19 @@ export default function PortfolioView() {
         currentValue={totalCurrentValue}
       />
 
-      <div className="card">
-        <div className="flex justify-between items-center mb-3 md:mb-4">
-          <h2 className="text-lg md:text-2xl font-bold text-osrs-gold">Pending Flips</h2>
+      <div className="card p-4 md:p-6 mb-4 md:mb-6">
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-bold font-cinzel text-transparent bg-clip-text bg-gold-gradient tracking-wide">Pending Flips</h2>
           <div className="flex gap-2">
             <button 
               onClick={handleExport}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-300 border border-gray-600 transition-colors flex items-center gap-1"
+              className="px-3 py-1.5 bg-[#151128] hover:bg-[#20193d] rounded-lg text-xs font-semibold text-gray-300 border border-luxury-border/60 hover:border-luxury-gold/30 transition-all duration-300 flex items-center gap-1"
               title="Export all flips to CSV"
             >
               ⬇️ <span className="hidden sm:inline">Export</span>
             </button>
             <label 
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-300 border border-gray-600 transition-colors cursor-pointer flex items-center gap-1"
+              className="px-3 py-1.5 bg-[#151128] hover:bg-[#20193d] rounded-lg text-xs font-semibold text-gray-300 border border-luxury-border/60 hover:border-luxury-gold/30 transition-all duration-300 cursor-pointer flex items-center gap-1"
               title="Import flips from CSV"
             >
               ⬆️ <span className="hidden sm:inline">Import</span>
@@ -305,59 +306,59 @@ export default function PortfolioView() {
               const projectedPositive = flip.projected_profit_remaining > 0;
               
               return (
-                <div key={flip.id} className="bg-gray-700 rounded-lg p-3 md:p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div key={flip.id} className="bg-[#120e24]/60 border border-luxury-border/40 rounded-2xl p-4 md:p-5 transition-all duration-300 hover:border-luxury-purple/40 hover:shadow-purple-glow">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-base md:text-xl font-bold mb-2">
+                      <h3 className="text-lg md:text-xl font-bold font-cinzel tracking-wide mb-3">
                         <button
-                          className="text-osrs-gold hover:text-yellow-300 transition-colors"
+                          className="text-luxury-gold hover:text-luxury-goldBright transition-colors text-left"
                           onClick={() => setPriceHistoryItem({ id: flip.item_id, name: flip.item_name })}
                         >
                           {flip.item_name}
                         </button>
                       </h3>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-400 flex items-center gap-1">
+                      <div className="space-y-2 text-sm font-outfit">
+                        <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                          <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs flex items-center gap-1">
                             Quantity:
                             <span 
-                              className="cursor-help text-xs border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center"
+                              className="cursor-help text-[10px] border border-luxury-purpleLight/30 rounded-full w-3.5 h-3.5 flex items-center justify-center text-luxury-purpleLight"
                               title="Current owned / Total bought / Intended target"
                             >
                               ?
                             </span>
                           </span>
-                          <span className="font-medium">
+                          <span className="font-semibold text-gray-200">
                             {flip.quantity_remaining?.toLocaleString()}
                             {hasPartialSale && (
-                              <span className="text-gray-500 ml-1">
+                              <span className="text-luxury-purpleLight/40 ml-1">
                                 / {flip.quantity_total?.toLocaleString()}
                               </span>
                             )}
                             {flip.intended_quantity && (
-                              <span className="text-gray-600 ml-1">
+                              <span className="text-luxury-gold/50 ml-1">
                                 / {flip.intended_quantity?.toLocaleString()}
                               </span>
                             )}
                           </span>
                         </div>
                         {hasPartialSale && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Already Sold:</span>
-                            <span className="text-osrs-green">
+                          <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                            <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Already Sold:</span>
+                            <span className="text-osrs-green font-semibold">
                               {soldQuantity.toLocaleString()}
                               {flip.sell_price && (
-                                <span className="text-gray-400"> @ {formatExactGP(flip.sell_price)}</span>
+                                <span className="text-gray-400 text-xs"> @ {formatExactGP(flip.sell_price)}</span>
                               )}
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Buy Price:</span>
+                        <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                          <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Buy Price:</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-osrs-red">{formatExactGP(flip.buy_price)}</span>
+                            <span className="text-osrs-red font-medium">{formatExactGP(flip.buy_price)}</span>
                             <button
-                              className="text-xs text-osrs-blue hover:text-blue-400 transition-colors px-2 py-0.5 rounded border border-osrs-blue hover:border-blue-400"
+                              className="text-xs text-luxury-purpleLight hover:text-white transition-colors px-1.5 py-0.5 rounded border border-luxury-border hover:border-luxury-purple/50 bg-[#0d0a1b]"
                               onClick={() => {
                                 setFlipToEditPrice(flip);
                                 setEditBuyPriceModalOpen(true);
@@ -369,30 +370,30 @@ export default function PortfolioView() {
                           </div>
                         </div>
                         {flip.break_even_price && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Break-Even Price:</span>
-                            <span className="text-yellow-400 font-medium">{formatExactGP(flip.break_even_price)}</span>
+                          <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                            <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Break-Even Price:</span>
+                            <span className="text-yellow-500 font-semibold">{formatExactGP(flip.break_even_price)}</span>
                           </div>
                         )}
                         {flip.intended_sell_price && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Target Sell Price:</span>
-                            <span className="text-osrs-green">{formatExactGP(flip.intended_sell_price)}</span>
+                          <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                            <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Target Sell Price:</span>
+                            <span className="text-osrs-green font-semibold">{formatExactGP(flip.intended_sell_price)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Total Invested:</span>
+                        <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                          <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Total Invested:</span>
                           <span className="text-osrs-red font-bold">{formatGP(flip.buy_price * flip.quantity_total)}</span>
                         </div>
                         {hasPartialSale && flip.profit && (
                           <>
-                            <div className="flex justify-between">
-                              <span className="text-gray-400">Profit So Far:</span>
+                            <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                              <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Profit So Far:</span>
                               <span className="text-osrs-green font-bold">{formatGP(flip.profit)}</span>
                             </div>
                             {flip.realized_roi != null && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-400">Realized ROI:</span>
+                              <div className="flex justify-between items-center border-b border-luxury-border/10 pb-1">
+                                <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Realized ROI:</span>
                                 <span className={`font-bold ${flip.realized_roi > 0 ? 'text-osrs-green' : 'text-osrs-red'}`}>
                                   {formatPercent(flip.realized_roi)}
                                 </span>
@@ -400,45 +401,45 @@ export default function PortfolioView() {
                             )}
                           </>
                         )}
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Created:</span>
-                          <span>{formatDateTime(flip.buy_time)}</span>
+                        <div className="flex justify-between items-center pb-1">
+                          <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-xs">Created:</span>
+                          <span className="text-gray-300 text-xs">{formatDateTime(flip.buy_time)}</span>
                         </div>
 
                         {/* Fill Rate Monitoring - Buy Status */}
                         {flip.fill_metrics?.buy_metrics && (
-                          <div className="border-t border-gray-600 mt-2 pt-2">
+                          <div className="border-t border-luxury-border/20 mt-2 pt-2 space-y-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-gray-400">Buy Status:</span>
-                              <span className={`text-xs px-2 py-1 rounded font-medium ${
-                                flip.fill_metrics.buy_metrics.badge_color === 'green' ? 'bg-green-900 text-green-300' :
-                                flip.fill_metrics.buy_metrics.badge_color === 'yellow' ? 'bg-yellow-900 text-yellow-300' :
-                                'bg-red-900 text-red-300'
+                              <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-[10px]">Buy Status:</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
+                                flip.fill_metrics.buy_metrics.badge_color === 'green' ? 'bg-emerald-950/60 border-emerald-500/20 text-emerald-300' :
+                                flip.fill_metrics.buy_metrics.badge_color === 'yellow' ? 'bg-amber-950/60 border-amber-500/20 text-amber-300' :
+                                'bg-rose-950/60 border-rose-500/20 text-rose-300'
                               }`}>
                                 {flip.fill_metrics.buy_metrics.recommendation_text}
                               </span>
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>Fill rate:</span>
-                              <span className="text-gray-300">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Fill rate:</span>
+                              <span className="text-gray-200">
                                 {Math.round(flip.fill_metrics.buy_metrics.actual_fill_rate)}/hr
                                 {flip.fill_metrics.buy_metrics.expected_fill_rate > 0 && 
-                                  <span className="text-gray-500"> (exp: {Math.round(flip.fill_metrics.buy_metrics.expected_fill_rate)}/hr)</span>
+                                  <span className="text-gray-500 text-[10px]"> (exp: {Math.round(flip.fill_metrics.buy_metrics.expected_fill_rate)}/hr)</span>
                                 }
                               </span>
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>Last buy:</span>
-                              <span className="text-gray-300">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Last buy:</span>
+                              <span className="text-gray-200">
                                 {flip.fill_metrics.buy_metrics.hours_since_last_buy < 1 
                                   ? `${Math.round(flip.fill_metrics.buy_metrics.hours_since_last_buy * 60)}m ago`
                                   : `${flip.fill_metrics.buy_metrics.hours_since_last_buy.toFixed(1)}h ago`
                                 }
                               </span>
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>Progress:</span>
-                              <span className="text-gray-300">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Progress:</span>
+                              <span className="text-gray-200 font-semibold">
                                 {flip.fill_metrics.buy_metrics.fill_progress.toFixed(0)}% filled
                               </span>
                             </div>
@@ -447,38 +448,38 @@ export default function PortfolioView() {
 
                         {/* Fill Rate Monitoring - Sell Status */}
                         {flip.fill_metrics?.sell_metrics && (
-                          <div className="border-t border-gray-600 mt-2 pt-2">
+                          <div className="border-t border-luxury-border/20 mt-2 pt-2 space-y-1">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-gray-400">Sell Status:</span>
-                              <span className={`text-xs px-2 py-1 rounded font-medium ${
-                                flip.fill_metrics.sell_metrics.badge_color === 'green' ? 'bg-green-900 text-green-300' :
-                                flip.fill_metrics.sell_metrics.badge_color === 'yellow' ? 'bg-yellow-900 text-yellow-300' :
-                                'bg-red-900 text-red-300'
+                              <span className="text-luxury-purpleLight/60 font-semibold uppercase tracking-wider text-[10px]">Sell Status:</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
+                                flip.fill_metrics.sell_metrics.badge_color === 'green' ? 'bg-emerald-950/60 border-emerald-500/20 text-emerald-300' :
+                                flip.fill_metrics.sell_metrics.badge_color === 'yellow' ? 'bg-amber-950/60 border-amber-500/20 text-amber-300' :
+                                'bg-rose-950/60 border-rose-500/20 text-rose-300'
                               }`}>
                                 {flip.fill_metrics.sell_metrics.recommendation_text}
                               </span>
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>Sell rate:</span>
-                              <span className="text-gray-300">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Sell rate:</span>
+                              <span className="text-gray-200">
                                 {Math.round(flip.fill_metrics.sell_metrics.actual_sell_rate)}/hr
                                 {flip.fill_metrics.sell_metrics.expected_sell_rate > 0 && 
-                                  <span className="text-gray-500"> (exp: {Math.round(flip.fill_metrics.sell_metrics.expected_sell_rate)}/hr)</span>
+                                  <span className="text-gray-500 text-[10px]"> (exp: {Math.round(flip.fill_metrics.sell_metrics.expected_sell_rate)}/hr)</span>
                                 }
                               </span>
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>Last sell:</span>
-                              <span className="text-gray-300">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Last sell:</span>
+                              <span className="text-gray-200">
                                 {flip.fill_metrics.sell_metrics.hours_since_last_sell < 1 
                                   ? `${Math.round(flip.fill_metrics.sell_metrics.hours_since_last_sell * 60)}m ago`
                                   : `${flip.fill_metrics.sell_metrics.hours_since_last_sell.toFixed(1)}h ago`
                                 }
                               </span>
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>In inventory:</span>
-                              <span className="text-gray-300">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">In inventory:</span>
+                              <span className="text-gray-200">
                                 {flip.fill_metrics.sell_metrics.time_in_inventory_hours < 1 
                                   ? `${Math.round(flip.fill_metrics.sell_metrics.time_in_inventory_hours * 60)}m`
                                   : `${flip.fill_metrics.sell_metrics.time_in_inventory_hours.toFixed(1)}h`
@@ -490,48 +491,46 @@ export default function PortfolioView() {
 
                         {/* Projection section */}
                         {hasProjection && (
-                          <>
-                            <div className="border-t border-gray-600 mt-2 pt-2">
-                              <div className="flex justify-between">
-                                <span className="text-gray-400">Current Market Price:</span>
-                                <span className="text-osrs-blue font-medium">{formatExactGP(flip.current_sell_price)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-400">If Sold Now (remaining):</span>
-                                <span className={`font-bold ${projectedPositive ? 'text-osrs-green' : 'text-osrs-red'}`}>
-                                  {formatGP(flip.projected_profit_remaining)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-400">Total Projected Profit:</span>
-                                <span className={`font-bold ${flip.projected_profit > 0 ? 'text-osrs-green' : 'text-osrs-red'}`}>
-                                  {formatGP(flip.projected_profit)}
-                                </span>
-                              </div>
-                              {flip.projected_roi != null && (
-                                <div className="flex justify-between">
-                                  <span className="text-gray-400">Projected ROI:</span>
-                                  <span className={`font-bold ${flip.projected_roi > 0 ? 'text-osrs-green' : 'text-osrs-red'}`}>
-                                    {formatPercent(flip.projected_roi)}
-                                  </span>
-                                </div>
-                              )}
+                          <div className="border-t border-luxury-border/20 mt-2 pt-2 space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Current Market Price:</span>
+                              <span className="text-osrs-blue font-semibold">{formatExactGP(flip.current_sell_price)}</span>
                             </div>
-                          </>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">If Sold Now (remaining):</span>
+                              <span className={`font-bold ${projectedPositive ? 'text-osrs-green' : 'text-osrs-red'}`}>
+                                {formatGP(flip.projected_profit_remaining)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Total Projected Profit:</span>
+                              <span className={`font-bold ${flip.projected_profit > 0 ? 'text-osrs-green' : 'text-osrs-red'}`}>
+                                {formatGP(flip.projected_profit)}
+                              </span>
+                            </div>
+                            {flip.projected_roi != null && (
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-400">Projected ROI:</span>
+                                <span className={`font-bold ${flip.projected_roi > 0 ? 'text-osrs-green' : 'text-osrs-red'}`}>
+                                  {formatPercent(flip.projected_roi)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         )}
                         {!hasProjection && (
-                          <div className="border-t border-gray-600 mt-2 pt-2">
-                            <span className="text-gray-500 text-xs">No live price data available</span>
+                          <div className="border-t border-luxury-border/20 mt-2 pt-2">
+                            <span className="text-gray-500 text-xs italic">No live price data available</span>
                           </div>
                         )}
 
                         {/* Recovery Analysis Toggle */}
-                        <div className="mt-2">
+                        <div className="mt-3">
                           <button
-                            className={`text-xs px-3 py-1 rounded transition-colors ${
+                            className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium border ${
                               showRecovery[flip.id]
-                                ? 'bg-osrs-blue text-white'
-                                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                                ? 'bg-luxury-purpleDark border-luxury-purple/50 text-white'
+                                : 'bg-[#151128] border-luxury-border/60 text-gray-300 hover:bg-[#20193d] hover:border-luxury-purple/30'
                             }`}
                             onClick={() => setShowRecovery(prev => ({ ...prev, [flip.id]: !prev[flip.id] }))}
                           >
@@ -540,130 +539,138 @@ export default function PortfolioView() {
                         </div>
 
                         {showRecovery[flip.id] && (
-                          <RecoveryPanel flipId={flip.id} />
+                          <div className="mt-2.5">
+                            <RecoveryPanel flipId={flip.id} />
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-semibold mb-2">Log Additional Purchase</h4>
-                      
-                      {/* Only show Log Buy if haven't reached intended quantity yet */}
-                      {(!flip.intended_quantity || flip.quantity_total < flip.intended_quantity) && (
-                        <button
-                          className="btn bg-osrs-gold hover:bg-yellow-500 text-black w-full mb-4"
-                          onClick={() => handleAddBuyClick(flip)}
-                          disabled={addBuyMutation.isPending}
-                        >
-                          📦 Log Buy
-                        </button>
-                      )}
-
-                      {flip.intended_quantity && flip.quantity_total >= flip.intended_quantity && (
-                        <div className="mb-4 p-3 bg-green-900/30 border border-green-700 rounded text-sm text-green-300">
-                          ✓ Target reached ({flip.quantity_total.toLocaleString()} / {flip.intended_quantity.toLocaleString()})
-                        </div>
-                      )}
-
-                      {flip.intended_quantity && flip.intended_quantity > flip.quantity_total && (
-                        <div className="mb-4">
-                          <button
-                            className="btn bg-orange-600 hover:bg-orange-700 text-white w-full text-sm"
-                            onClick={() => {
-                              setFlipToAdjustIntended(flip);
-                              setAdjustIntendedModalOpen(true);
-                            }}
-                            disabled={adjustIntendedMutation.isPending}
-                            title="Set intended quantity to current quantity and free up reserved cash"
-                          >
-                            💰 Adjust Target ({flip.quantity_total.toLocaleString()} / {flip.intended_quantity.toLocaleString()})
-                          </button>
-                          <p className="text-xs text-gray-400 mt-1 text-center">
-                            Free up {formatGP((flip.intended_quantity - flip.quantity_total) * flip.buy_price)} reserved cash
-                          </p>
-                        </div>
-                      )}
-
-                      <h4 className="font-semibold mb-2">Sell This Flip</h4>
-                      <div className="space-y-2">
-                        {/* Price Mode Toggle */}
-                        <div className="flex gap-1 md:gap-2 mb-3">
-                          <button
-                            className={`flex-1 px-2 md:px-3 py-1 rounded text-xs md:text-sm transition-colors ${
-                              priceMode[flip.id] === 'per_item'
-                                ? 'bg-osrs-gold text-black'
-                                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                            }`}
-                            onClick={() => setPriceMode({ ...priceMode, [flip.id]: 'per_item' })}
-                          >
-                            Per Item
-                          </button>
-                          <button
-                            className={`flex-1 px-2 md:px-3 py-1 rounded text-xs md:text-sm transition-colors ${
-                              (priceMode[flip.id] || 'total') === 'total'
-                                ? 'bg-osrs-gold text-black'
-                                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                            }`}
-                            onClick={() => setPriceMode({ ...priceMode, [flip.id]: 'total' })}
-                          >
-                            Total Price
-                          </button>
-                        </div>
+                    <div className="flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-cinzel text-xs text-luxury-purpleLight/80 font-bold uppercase tracking-wider mb-2">Log Additional Purchase</h4>
                         
-                        <div>
-                          <label className="block text-xs text-gray-400 mb-1">
-                            {(priceMode[flip.id] || 'total') === 'total' ? 'Total Sale Price (before tax)' : 'Price Per Item'}
-                          </label>
-                          <input
-                            type="number"
-                            className="input w-full"
-                            placeholder={(priceMode[flip.id] || 'total') === 'total' ? 'Total amount received' : 'Price per item'}
-                            value={sellForm[flip.id]?.price || ''}
-                            onChange={(e) => updateSellForm(flip.id, 'price', e.target.value)}
-                          />
-                          {(priceMode[flip.id] || 'total') === 'total' && sellForm[flip.id]?.price && sellForm[flip.id]?.quantity && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              ≈ {Math.floor(parseInt(sellForm[flip.id].price) / parseInt(sellForm[flip.id].quantity)).toLocaleString()} gp per item
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-400 mb-1">
-                            Quantity {(priceMode[flip.id] || 'total') === 'total' ? '(required)' : '(leave empty for full sale)'}
-                          </label>
-                          <input
-                            type="number"
-                            className="input w-full"
-                            placeholder={`Max: ${flip.quantity_remaining}`}
-                            max={flip.quantity_remaining}
-                            value={sellForm[flip.id]?.quantity || ''}
-                            onChange={(e) => updateSellForm(flip.id, 'quantity', e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-3">
+                        {/* Only show Log Buy if haven't reached intended quantity yet */}
+                        {(!flip.intended_quantity || flip.quantity_total < flip.intended_quantity) && (
                           <button
-                            className="btn btn-primary flex-1 min-w-0"
-                            onClick={() => handleSell(flip.id)}
-                            disabled={sellMutation.isPending}
+                            className="btn btn-primary w-full mb-4 text-sm py-2 px-4"
+                            onClick={() => handleAddBuyClick(flip)}
+                            disabled={addBuyMutation.isPending}
                           >
-                            Sell
+                            📦 Log Buy
                           </button>
-                          {flip.current_sell_price && (
+                        )}
+
+                        {flip.intended_quantity && flip.quantity_total >= flip.intended_quantity && (
+                          <div className="mb-4 p-3 bg-emerald-950/40 border border-emerald-500/20 rounded-xl text-xs font-semibold text-emerald-300 text-center font-outfit">
+                            ✓ Target reached ({flip.quantity_total.toLocaleString()} / {flip.intended_quantity.toLocaleString()})
+                          </div>
+                        )}
+
+                        {flip.intended_quantity && flip.intended_quantity > flip.quantity_total && (
+                          <div className="mb-4">
                             <button
-                              className="btn bg-osrs-blue hover:bg-blue-600 text-white flex-1 min-w-0 text-xs md:text-sm"
-                              onClick={() => handleSellAtMarket(flip)}
+                              className="btn bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white w-full text-xs py-2 px-4 shadow-md"
+                              onClick={() => {
+                                setFlipToAdjustIntended(flip);
+                                setAdjustIntendedModalOpen(true);
+                              }}
+                              disabled={adjustIntendedMutation.isPending}
+                              title="Set intended quantity to current quantity and free up reserved cash"
+                            >
+                              💰 Adjust Target ({flip.quantity_total.toLocaleString()} / {flip.intended_quantity.toLocaleString()})
+                            </button>
+                            <p className="text-[10px] text-gray-400 mt-1.5 text-center font-outfit">
+                              Free up {formatGP((flip.intended_quantity - flip.quantity_total) * flip.buy_price)} reserved cash
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="font-cinzel text-xs text-luxury-purpleLight/80 font-bold uppercase tracking-wider mb-2">Sell This Flip</h4>
+                        <div className="space-y-3 font-outfit">
+                          {/* Price Mode Toggle */}
+                          <div className="flex gap-2">
+                            <button
+                              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                                priceMode[flip.id] === 'per_item'
+                                  ? 'bg-gold-gradient text-luxury-darker font-bold shadow-gold-glow scale-[1.02]'
+                                  : 'bg-[#151128] text-gray-300 border border-luxury-border/60 hover:border-luxury-gold/30'
+                              }`}
+                              onClick={() => setPriceMode({ ...priceMode, [flip.id]: 'per_item' })}
+                            >
+                              Per Item
+                            </button>
+                            <button
+                              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                                (priceMode[flip.id] || 'total') === 'total'
+                                  ? 'bg-gold-gradient text-luxury-darker font-bold shadow-gold-glow scale-[1.02]'
+                                  : 'bg-[#151128] text-gray-300 border border-luxury-border/60 hover:border-luxury-gold/30'
+                              }`}
+                              onClick={() => setPriceMode({ ...priceMode, [flip.id]: 'total' })}
+                            >
+                              Total Price
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <div>
+                              <label className="block text-[10px] text-luxury-purpleLight/60 font-semibold uppercase tracking-wider mb-1">
+                                {(priceMode[flip.id] || 'total') === 'total' ? 'Total Sale Price (before tax)' : 'Price Per Item'}
+                              </label>
+                              <input
+                                type="number"
+                                className="input w-full text-sm"
+                                placeholder={(priceMode[flip.id] || 'total') === 'total' ? 'Total amount received' : 'Price per item'}
+                                value={sellForm[flip.id]?.price || ''}
+                                onChange={(e) => updateSellForm(flip.id, 'price', e.target.value)}
+                              />
+                              {(priceMode[flip.id] || 'total') === 'total' && sellForm[flip.id]?.price && sellForm[flip.id]?.quantity && (
+                                <p className="text-[10px] text-gray-400 mt-1">
+                                  ≈ {Math.floor(parseInt(sellForm[flip.id].price) / parseInt(sellForm[flip.id].quantity)).toLocaleString()} gp per item
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-luxury-purpleLight/60 font-semibold uppercase tracking-wider mb-1">
+                                Quantity {(priceMode[flip.id] || 'total') === 'total' ? '(required)' : '(leave empty for full sale)'}
+                              </label>
+                              <input
+                                type="number"
+                                className="input w-full text-sm"
+                                placeholder={`Max: ${flip.quantity_remaining}`}
+                                max={flip.quantity_remaining}
+                                value={sellForm[flip.id]?.quantity || ''}
+                                onChange={(e) => updateSellForm(flip.id, 'quantity', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <button
+                              className="btn btn-primary flex-1 min-w-[70px] text-xs py-2"
+                              onClick={() => handleSell(flip.id)}
                               disabled={sellMutation.isPending}
                             >
-                              Sell @ {formatExactGP(flip.current_sell_price)}
+                              Sell
                             </button>
-                          )}
-                          <button
-                            className="btn btn-secondary min-w-0"
-                            onClick={() => handleCancelClick(flip)}
-                            disabled={cancelMutation.isPending}
-                          >
-                            Cancel
-                          </button>
+                            {flip.current_sell_price && (
+                              <button
+                                className="btn bg-gradient-to-r from-luxury-purpleDark to-luxury-purple hover:from-luxury-purple hover:to-luxury-purpleLight text-white flex-1 min-w-[120px] text-xs py-2 shadow-md"
+                                onClick={() => handleSellAtMarket(flip)}
+                                disabled={sellMutation.isPending}
+                              >
+                                Market @ {formatExactGP(flip.current_sell_price)}
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-secondary min-w-[70px] text-xs py-2"
+                              onClick={() => handleCancelClick(flip)}
+                              disabled={cancelMutation.isPending}
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

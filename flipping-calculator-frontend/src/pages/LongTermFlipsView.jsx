@@ -6,6 +6,7 @@ import BuyModal from '../components/BuyModal';
 import PriceHistoryModal from '../components/PriceHistoryModal';
 import ItemSearchBar from '../components/ItemSearchBar';
 import ItemDetailModal from '../components/ItemDetailModal';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function LongTermFlipsView() {
   const { filters } = useAppStore();
@@ -30,7 +31,7 @@ export default function LongTermFlipsView() {
   return (
     <div>
       <div className="card mb-4 md:mb-6">
-        <h2 className="text-base md:text-lg font-bold text-osrs-gold mb-2 md:mb-3">Item Lookup</h2>
+        <h2 className="text-base md:text-lg font-black font-cinzel text-transparent bg-clip-text bg-gold-gradient tracking-wide mb-3">Item Lookup</h2>
         <ItemSearchBar
           onSelectItem={(item) => {
             setDetailItem(item);
@@ -39,15 +40,15 @@ export default function LongTermFlipsView() {
       </div>
 
       <div className="card mb-4 md:mb-6">
-        <h2 className="text-lg font-bold text-osrs-gold">Long-Term Flips</h2>
+        <h2 className="text-lg md:text-2xl font-black font-cinzel text-transparent bg-clip-text bg-gold-gradient tracking-wide mb-2">Long-Term Flips</h2>
         <p className="text-sm text-gray-400 mt-2">
           These items are selected based on their 7-day price trajectory and stability, designed for holding over 3-14 days. Expected values assume the current market trends hold stable.
         </p>
       </div>
 
       {searchLoading && (
-        <div className="card text-center py-12">
-          <p className="text-gray-400">Searching for long-term flips...</p>
+        <div className="card flex justify-center py-12 mb-4 md:mb-6">
+          <LoadingSpinner message="Searching for long-term flips..." />
         </div>
       )}
 

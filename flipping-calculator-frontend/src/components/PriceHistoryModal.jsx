@@ -55,16 +55,16 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[70] p-2 md:p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-auto border border-gray-700">
+    <div className="fixed inset-0 bg-luxury-darker/80 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4 animate-fade-in">
+      <div className="bg-luxury-card backdrop-blur-xl rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-auto border border-luxury-purple/20 shadow-luxury-shadow shadow-purple-glow">
         {/* Header */}
-        <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 md:p-6 flex justify-between items-center">
+        <div className="sticky top-0 bg-luxury-card/95 backdrop-blur-md border-b border-luxury-border p-4 md:p-6 flex justify-between items-center z-10">
           <div>
-            <h2 className="text-lg md:text-2xl font-bold text-white">{itemName}</h2>
-            <p className="text-sm text-gray-400">Price History</p>
+            <h2 className="text-lg md:text-2xl font-bold bg-gold-gradient bg-clip-text text-transparent font-cinzel">{itemName}</h2>
+            <p className="text-xs text-luxury-purpleLight uppercase tracking-wider font-semibold">Price History</p>
           </div>
           <button
-            className="text-gray-400 hover:text-white text-2xl"
+            className="text-luxury-purpleLight hover:text-luxury-gold text-2xl transition-colors duration-200"
             onClick={onClose}
           >
             ✕
@@ -72,34 +72,34 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
         </div>
 
         {/* Content */}
-        <div className="p-3 md:p-6">
+        <div className="p-4 md:p-6">
           {/* Timestep selector */}
-          <div className="flex gap-1 md:gap-2 mb-4 md:mb-6">
+          <div className="flex gap-2 mb-4 md:mb-6">
             <button
-              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded text-sm transition-colors ${
+              className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 transform outline-none select-none ${
                 timestep === '5m'
-                  ? 'bg-osrs-gold text-black'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-gold-gradient text-luxury-darker font-bold shadow-gold-glow scale-[1.02]'
+                  : 'bg-luxury-darker/60 text-luxury-purpleLight hover:text-white border border-luxury-purple/20 hover:bg-luxury-purple/10 hover:border-luxury-purple/40'
               }`}
               onClick={() => setTimestep('5m')}
             >
               5 Min
             </button>
             <button
-              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded text-sm transition-colors ${
+              className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 transform outline-none select-none ${
                 timestep === '1h'
-                  ? 'bg-osrs-gold text-black'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-gold-gradient text-luxury-darker font-bold shadow-gold-glow scale-[1.02]'
+                  : 'bg-luxury-darker/60 text-luxury-purpleLight hover:text-white border border-luxury-purple/20 hover:bg-luxury-purple/10 hover:border-luxury-purple/40'
               }`}
               onClick={() => setTimestep('1h')}
             >
               1 Hour
             </button>
             <button
-              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded text-sm transition-colors ${
+              className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 transform outline-none select-none ${
                 timestep === '6h'
-                  ? 'bg-osrs-gold text-black'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-gold-gradient text-luxury-darker font-bold shadow-gold-glow scale-[1.02]'
+                  : 'bg-luxury-darker/60 text-luxury-purpleLight hover:text-white border border-luxury-purple/20 hover:bg-luxury-purple/10 hover:border-luxury-purple/40'
               }`}
               onClick={() => setTimestep('6h')}
             >
@@ -109,27 +109,28 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
 
           {/* Loading state */}
           {isLoading && (
-            <div className="text-center py-12">
-              <p className="text-gray-400">Loading price history...</p>
+            <div className="text-center py-16 text-luxury-purpleLight animate-pulse flex flex-col items-center justify-center gap-3">
+              <span className="w-8 h-8 rounded-full border-4 border-t-luxury-gold border-r-luxury-gold border-b-luxury-purple border-l-luxury-purple animate-spin"></span>
+              Loading price history...
             </div>
           )}
 
           {/* Error state */}
           {error && (
-            <div className="text-center py-12">
-              <p className="text-red-400">Error loading price history: {error.message}</p>
+            <div className="text-center py-16">
+              <p className="text-osrs-red">Error loading price history: {error.message}</p>
             </div>
           )}
 
           {/* Chart */}
           {!isLoading && !error && chartData.length > 0 && (
-            <div className="bg-gray-900 rounded-lg p-4">
+            <div className="bg-luxury-darker/40 backdrop-blur-md rounded-xl p-4 border border-luxury-purple/10">
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 92, 246, 0.08)" />
                   <XAxis 
                     dataKey="timestamp" 
-                    stroke="#9CA3AF"
+                    stroke="rgba(139, 92, 246, 0.5)"
                     tickFormatter={(timestamp) => {
                       const date = new Date(timestamp * 1000);
                       if (timestep === '5m') {
@@ -140,23 +141,31 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
                         return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
                       }
                     }}
+                    style={{ fontSize: '11px', fontFamily: 'Outfit, sans-serif' }}
                   />
                   <YAxis 
-                    stroke="#9CA3AF"
+                    stroke="rgba(139, 92, 246, 0.5)"
                     tickFormatter={(value) => formatGP(value)}
                     domain={yAxisDomain}
+                    style={{ fontSize: '11px', fontFamily: 'Outfit, sans-serif' }}
                   />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                    labelStyle={{ color: '#D1D5DB' }}
+                    contentStyle={{ 
+                      backgroundColor: '#0c0818', 
+                      borderColor: 'rgba(139, 92, 246, 0.25)', 
+                      borderRadius: '12px', 
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+                      fontFamily: 'Outfit, sans-serif'
+                    }}
+                    labelStyle={{ color: '#c084fc', fontWeight: 'bold' }}
                     formatter={(value) => formatGP(value)}
                     labelFormatter={(timestamp) => new Date(timestamp * 1000).toLocaleString()}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontFamily: 'Outfit, sans-serif', fontSize: '12px', marginTop: '10px' }} />
                   <Line 
                     type="monotone" 
                     dataKey="buyPrice" 
-                    stroke="#EF4444" 
+                    stroke="#f43f5e" 
                     name="Buy Price (High)"
                     strokeWidth={2}
                     dot={false}
@@ -165,7 +174,7 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
                   <Line 
                     type="monotone" 
                     dataKey="sellPrice" 
-                    stroke="#10B981" 
+                    stroke="#10b981" 
                     name="Sell Price (Low)"
                     strokeWidth={2}
                     dot={false}
@@ -178,14 +187,14 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
 
           {/* No data */}
           {!isLoading && !error && chartData.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-400">No price history data available for this item.</p>
+            <div className="text-center py-16">
+              <p className="text-gray-400 italic">No price history data available for this item.</p>
             </div>
           )}
 
           {/* Market Trajectory */}
           {!isLoading && !error && chartData.length > 0 && (
-            <div className="mt-4 md:mt-6">
+            <div className="mt-6">
               <MarketTrajectory itemId={itemId} itemName={itemName} />
             </div>
           )}
@@ -193,27 +202,27 @@ export default function PriceHistoryModal({ isOpen, itemId, itemName, onClose })
           {/* Summary stats */}
           {!isLoading && !error && chartData.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-              <div className="bg-gray-700 rounded p-4">
-                <p className="text-xs text-gray-400 mb-1">Current Buy</p>
-                <p className="text-lg font-bold text-osrs-red">
+              <div className="bg-luxury-darker/40 backdrop-blur-md rounded-xl p-4 border border-luxury-purple/10 hover:border-luxury-purple/20 transition-all duration-300">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-luxury-purpleLight/70 mb-1">Current Buy</p>
+                <p className="text-lg font-bold font-mono text-osrs-red">
                   {formatGP(chartData[chartData.length - 1]?.buyPrice)}
                 </p>
               </div>
-              <div className="bg-gray-700 rounded p-4">
-                <p className="text-xs text-gray-400 mb-1">Current Sell</p>
-                <p className="text-lg font-bold text-osrs-green">
+              <div className="bg-luxury-darker/40 backdrop-blur-md rounded-xl p-4 border border-luxury-purple/10 hover:border-luxury-purple/20 transition-all duration-300">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-luxury-purpleLight/70 mb-1">Current Sell</p>
+                <p className="text-lg font-bold font-mono text-osrs-green">
                   {formatGP(chartData[chartData.length - 1]?.sellPrice)}
                 </p>
               </div>
-              <div className="bg-gray-700 rounded p-4">
-                <p className="text-xs text-gray-400 mb-1">Current Spread</p>
-                <p className="text-lg font-bold text-osrs-gold">
+              <div className="bg-luxury-darker/40 backdrop-blur-md rounded-xl p-4 border border-luxury-purple/10 hover:border-luxury-purple/20 transition-all duration-300">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-luxury-purpleLight/70 mb-1">Current Spread</p>
+                <p className="text-lg font-bold font-mono text-luxury-gold">
                   {formatGP(chartData[chartData.length - 1]?.spread)}
                 </p>
               </div>
-              <div className="bg-gray-700 rounded p-4">
-                <p className="text-xs text-gray-400 mb-1">Data Points</p>
-                <p className="text-lg font-bold text-gray-300">
+              <div className="bg-luxury-darker/40 backdrop-blur-md rounded-xl p-4 border border-luxury-purple/10 hover:border-luxury-purple/20 transition-all duration-300">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-luxury-purpleLight/70 mb-1">Data Points</p>
+                <p className="text-lg font-bold font-mono text-white">
                   {chartData.length}
                 </p>
               </div>

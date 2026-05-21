@@ -45,10 +45,10 @@ export default function ItemSearchBar({ onSelectItem }) {
   return (
     <div ref={wrapperRef} className="relative">
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-luxury-purpleLight/60 text-sm">🔍</span>
         <input
           type="text"
-          className="input w-full pl-9"
+          className="input w-full pl-10"
           placeholder="Search for an item..."
           value={query}
           onChange={(e) => {
@@ -61,29 +61,39 @@ export default function ItemSearchBar({ onSelectItem }) {
       </div>
 
       {isOpen && debouncedQuery.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-72 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-full bg-luxury-card backdrop-blur-xl border border-luxury-purple/20 rounded-xl shadow-luxury-shadow shadow-purple-glow max-h-72 overflow-y-auto">
           {isLoading && (
-            <div className="p-3 text-gray-400 text-sm">Searching...</div>
+            <div className="p-4 text-luxury-purpleLight text-sm animate-pulse flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-luxury-gold animate-ping"></span>
+              Searching Grand Exchange...
+            </div>
           )}
 
           {!isLoading && results && results.length === 0 && (
-            <div className="p-3 text-gray-400 text-sm">No items found</div>
+            <div className="p-4 text-gray-400 text-sm italic">No items found</div>
           )}
 
           {!isLoading && results && results.map((item) => (
             <button
               key={item.id}
-              className="w-full text-left px-4 py-2.5 hover:bg-gray-700 transition-colors flex justify-between items-center border-b border-gray-700 last:border-0"
+              className="w-full text-left px-4 py-3 hover:bg-luxury-purple/10 transition-all duration-200 flex justify-between items-center border-b border-luxury-border last:border-0 group"
               onClick={() => handleSelect(item)}
             >
-              <span className="text-white font-medium">{item.name}</span>
+              <span className="text-white font-medium group-hover:text-luxury-gold transition-colors duration-200">{item.name}</span>
               <span className="text-xs text-gray-400 flex items-center gap-2">
-                {item.members
-                  ? <span className="text-yellow-400">⭐ Members</span>
-                  : <span>F2P</span>
-                }
+                {item.members ? (
+                  <span className="bg-luxury-gold/15 text-luxury-gold text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-luxury-gold/20">
+                    Members
+                  </span>
+                ) : (
+                  <span className="bg-luxury-purple/15 text-luxury-purpleLight text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-luxury-purple/20">
+                    F2P
+                  </span>
+                )}
                 {item.ge_limit && (
-                  <span className="ml-1">Limit: {item.ge_limit.toLocaleString()}</span>
+                  <span className="ml-1 text-luxury-purpleLight/70 font-mono">
+                    Limit: {item.ge_limit.toLocaleString()}
+                  </span>
                 )}
               </span>
             </button>

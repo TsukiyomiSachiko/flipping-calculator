@@ -27,9 +27,9 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
       <div className="md:hidden space-y-2">
         {flips.map((item, idx) => {
           const isExpanded = expandedRows[idx];
-          const scoreColor = item.score >= 70 ? 'text-osrs-green' :
-                            item.score >= 45 ? 'text-yellow-400' :
-                            item.score >= 25 ? 'text-orange-400' : 'text-gray-400';
+          const scoreColor = item.long_term_score >= 70 ? 'text-osrs-green' :
+                            item.long_term_score >= 45 ? 'text-luxury-gold' :
+                            item.long_term_score >= 25 ? 'text-orange-400' : 'text-gray-400';
 
           return (
             <div key={item.id} className="card p-0 overflow-hidden">
@@ -39,8 +39,8 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
                 onClick={() => toggleRow(idx)}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <button
-                    className="font-medium text-osrs-gold truncate cursor-pointer hover:text-yellow-400 bg-transparent border-0 p-0"
+                  <span
+                    className="font-semibold font-cinzel text-luxury-gold truncate cursor-pointer hover:text-luxury-goldBright bg-transparent border-0 p-0 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       console.log('Item clicked:', item.name, 'Handler:', typeof onShowDetail);
@@ -52,11 +52,11 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
                     }}
                   >
                     {item.name}
-                  </button>
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`font-bold ${scoreColor}`}>{item.score ?? '—'}</span>
-                  <span className={`text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+                  <span className={`font-bold font-outfit ${scoreColor}`}>{item.long_term_score ?? '—'}</span>
+                  <span className={`text-luxury-purpleLight/60 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
                     ›
                   </span>
                 </div>
@@ -64,16 +64,16 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
 
               {/* Expanded: All data */}
               {isExpanded && (
-                <div className="border-t border-gray-700 px-4 pb-4">
+                <div className="border-t border-luxury-border/30 px-4 pb-4">
                   {/* Key metrics */}
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <MobileField label="Buy Price" value={formatExactGP(item.buy_price)} color="text-osrs-red" />
                     <MobileField label="Exp. Sell (7d)" value={formatExactGP(item.expected_sell_price)} color="text-osrs-green" />
-                    <MobileField label="Exp. Profit" value={formatGP(item.expected_profit_7d)} color="text-osrs-gold" />
+                    <MobileField label="Exp. Profit" value={formatGP(item.expected_profit_7d)} color="text-luxury-gold" />
                     <MobileField label="Exp. ROI" value={formatPercent(item.expected_roi_7d)} color={
-                      item.expected_roi_7d >= 10 ? 'text-osrs-green' : item.expected_roi_7d >= 5 ? 'text-yellow-400' : 'text-gray-400'
+                      item.expected_roi_7d >= 10 ? 'text-osrs-green' : item.expected_roi_7d >= 5 ? 'text-luxury-gold' : 'text-gray-400'
                     } />
-                    <MobileField label="Limit Profit" value={formatGP(item.limit_profit)} color="text-blue-400" />
+                    <MobileField label="Limit Profit" value={formatGP(item.limit_profit)} color="text-luxury-purpleLight" />
                     <MobileField label="Volume" value={
                       (() => { const v = getVolumeIndicator(item.volume); return `${v.emoji} ${item.volume?.toLocaleString() || 'N/A'}`; })()
                     } />
@@ -87,17 +87,17 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
                     } color="text-osrs-red" />
                     {item.secondary_score != null && (
                       <MobileField label="Erebus Score" value={item.secondary_score} color={
-                        item.secondary_score >= 50 ? 'text-purple-400' :
+                        item.secondary_score >= 50 ? 'text-luxury-purple' :
                         item.secondary_score >= 20 ? 'text-osrs-green' :
-                        item.secondary_score >= 5 ? 'text-yellow-400' : 'text-gray-400'
+                        item.secondary_score >= 5 ? 'text-luxury-gold' : 'text-gray-400'
                       } />
                     )}
                     <div className="col-span-2">
-                      <p className="text-xs text-gray-400 mb-1">Data Quality</p>
-                      <p className={`font-bold ${
+                      <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-0.5">Data Quality</p>
+                      <p className={`font-bold font-outfit ${
                         item.quality_score == null ? 'text-gray-500' :
                         item.quality_score >= 80 ? 'text-osrs-green' :
-                        item.quality_score >= 50 ? 'text-yellow-400' : 'text-osrs-red'
+                        item.quality_score >= 50 ? 'text-luxury-gold' : 'text-osrs-red'
                       }`}>
                         {item.quality_score != null ? `${item.quality_score.toFixed(0)} / 100` : '—'}
                         {item.quality_flags?.length > 0 && (
@@ -110,7 +110,7 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
                   </div>
 
                   {/* Exact prices */}
-                  <div className="mt-3 text-xs text-gray-500 space-y-1">
+                  <div className="mt-3 text-xs text-gray-500 font-outfit space-y-1">
                     <p>Buy: {item.buy_price?.toLocaleString()} gp · Exp. Sell: {item.expected_sell_price?.toLocaleString()} gp · Exp. Profit: {item.expected_profit_7d?.toLocaleString()} gp</p>
                   </div>
 
@@ -143,8 +143,8 @@ const LongTermFlipTable = React.memo(function LongTermFlipTable({ flips, onSelec
 const MobileField = React.memo(function MobileField({ label, value, color = 'text-white' }) {
   return (
     <div>
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className={`font-medium text-sm ${color}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-0.5">{label}</p>
+      <p className={`font-medium text-sm font-outfit ${color}`}>{value}</p>
     </div>
   );
 });
@@ -157,7 +157,7 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
         accessorKey: 'name',
         cell: ({ row }) => (
           <button
-            className="font-medium text-osrs-gold hover:text-yellow-300 text-left transition-colors"
+            className="font-semibold font-cinzel text-luxury-gold hover:text-luxury-goldBright text-left transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               console.log('Desktop item clicked:', row.original.name, 'Handler:', typeof onShowDetail);
@@ -176,28 +176,28 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
         header: 'Buy Price',
         accessorKey: 'buy_price',
         cell: ({ getValue }) => (
-          <span className="text-osrs-red">{formatExactGP(getValue())}</span>
+          <span className="text-osrs-red font-outfit">{formatExactGP(getValue())}</span>
         ),
       },
       {
         header: 'Expected Sell (7d)',
         accessorKey: 'expected_sell_price',
         cell: ({ getValue }) => (
-          <span className="text-osrs-green">{formatExactGP(getValue())}</span>
+          <span className="text-osrs-green font-outfit">{formatExactGP(getValue())}</span>
         ),
       },
       {
         header: 'Expected Profit',
         accessorKey: 'expected_profit_7d',
         cell: ({ getValue }) => (
-          <span className="text-osrs-gold font-bold">{formatGP(getValue())}</span>
+          <span className="text-luxury-gold font-bold font-outfit">{formatGP(getValue())}</span>
         ),
       },
       {
         header: 'Limit Profit',
         accessorKey: 'limit_profit',
         cell: ({ getValue }) => (
-          <span className="text-blue-400 font-bold">{formatGP(getValue())}</span>
+          <span className="text-luxury-purpleLight font-bold font-outfit">{formatGP(getValue())}</span>
         ),
       },
       {
@@ -206,8 +206,8 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
         cell: ({ getValue }) => {
           const roi = getValue();
           const color = roi >= 10 ? 'text-osrs-green' : 
-                       roi >= 5 ? 'text-yellow-400' : 'text-gray-400';
-          return <span className={color}>{formatPercent(roi)}</span>;
+                       roi >= 5 ? 'text-luxury-gold' : 'text-gray-400';
+          return <span className={`font-outfit ${color}`}>{formatPercent(roi)}</span>;
         },
       },
       {
@@ -216,9 +216,9 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
         cell: ({ getValue }) => {
           const score = getValue();
           const color = score >= 70 ? 'text-osrs-green' :
-                       score >= 45 ? 'text-yellow-400' :
+                       score >= 45 ? 'text-luxury-gold' :
                        score >= 25 ? 'text-orange-400' : 'text-gray-400';
-          return <span className={`font-bold ${color}`}>{score ?? '—'}</span>;
+          return <span className={`font-bold font-outfit ${color}`}>{score ?? '—'}</span>;
         },
       },
       {
@@ -232,7 +232,7 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
           const volume = getValue();
           const indicator = getVolumeIndicator(volume);
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 font-outfit">
               <span>{indicator.emoji}</span>
               <span className={indicator.color}>{volume?.toLocaleString() || 'N/A'}</span>
             </div>
@@ -242,14 +242,16 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
       {
         header: 'GE Limit',
         accessorKey: 'ge_limit',
-        cell: ({ getValue }) => getValue()?.toLocaleString() || 'N/A',
+        cell: ({ getValue }) => (
+          <span className="font-outfit">{getValue()?.toLocaleString() || 'N/A'}</span>
+        ),
       },
       {
         header: 'Action',
         id: 'actions',
         cell: ({ row }) => (
           <button
-            className="btn btn-primary text-sm py-1 px-3"
+            className="btn btn-primary text-xs py-1.5 px-3"
             onClick={(e) => {
               e.stopPropagation();
               onSelectFlip(row.original);
@@ -264,7 +266,7 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
         id: 'expand',
         cell: ({ row }) => (
           <button
-            className="text-gray-400 hover:text-white transition-colors px-2"
+            className="text-luxury-purpleLight/60 hover:text-luxury-goldBright transition-colors px-2"
             onClick={(e) => {
               e.stopPropagation();
               toggleRow(row.id);
@@ -289,16 +291,13 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
   const columnCount = columns.length;
 
   return (
-    <div className="card overflow-x-auto hidden md:block">
-      <table className="w-full">
+    <div className="luxury-table-container hidden md:block">
+      <table className="luxury-table">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="border-b border-gray-700">
+            <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className="text-left p-3 font-semibold text-osrs-gold"
-                >
+                <th key={header.id}>
                   {flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
@@ -313,43 +312,43 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
             return (
               <React.Fragment key={row.id}>
                 <tr
-                  className="border-b border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer"
+                  className="cursor-pointer"
                   onClick={() => toggleRow(row.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-3">
+                    <td key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
                 {isExpanded && (
-                  <tr className="bg-gray-750">
-                    <td colSpan={columnCount} className="p-4">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <tr className="expanded-details">
+                    <td colSpan={columnCount} className="p-5">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Max Qty (Cash)</p>
-                          <p className="font-medium">{item.max_qty?.toLocaleString() || 'N/A'}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Max Qty (Cash)</p>
+                          <p className="font-medium font-outfit text-sm text-slate-200">{item.max_qty?.toLocaleString() || 'N/A'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Your Profit</p>
-                          <p className="font-bold text-osrs-green">{formatGP(item.your_profit)}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Your Profit</p>
+                          <p className="font-bold font-outfit text-sm text-osrs-green">{formatGP(item.your_profit)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Profit at Limit</p>
-                          <p className="font-bold text-blue-400">{formatGP(item.profit_at_limit)}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Profit at Limit</p>
+                          <p className="font-bold font-outfit text-sm text-luxury-purpleLight">{formatGP(item.profit_at_limit)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Member Status</p>
-                          <p className="font-medium">
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Member Status</p>
+                          <p className="font-medium font-outfit text-sm">
                             {item.members
-                              ? <span className="text-yellow-400">⭐ Members</span>
-                              : <span className="text-gray-300">F2P</span>
+                              ? <span className="text-luxury-gold">⭐ Members</span>
+                              : <span className="text-slate-300">F2P</span>
                             }
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">GE Tax</p>
-                          <p className="font-medium text-osrs-red">
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">GE Tax</p>
+                          <p className="font-medium font-outfit text-sm text-osrs-red">
                             {item.sell_price > 50
                               ? formatGP(Math.floor(item.sell_price * 0.02))
                               : '0 gp'
@@ -357,28 +356,28 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Long Term Score</p>
-                          <p className={`font-bold ${
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Long Term Score</p>
+                          <p className={`font-bold font-outfit text-sm ${
                             item.long_term_score >= 70 ? 'text-osrs-green' :
-                            item.long_term_score >= 45 ? 'text-yellow-400' :
+                            item.long_term_score >= 45 ? 'text-luxury-gold' :
                             item.long_term_score >= 25 ? 'text-orange-400' : 'text-gray-400'
                           }`}>{item.long_term_score ?? '—'} / 100</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Erebus Score</p>
-                          <p className={`font-bold ${
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Erebus Score</p>
+                          <p className={`font-bold font-outfit text-sm ${
                             item.secondary_score == null ? 'text-gray-500' :
-                            item.secondary_score >= 50 ? 'text-purple-400' :
+                            item.secondary_score >= 50 ? 'text-luxury-purple' :
                             item.secondary_score >= 20 ? 'text-osrs-green' :
-                            item.secondary_score >= 5 ? 'text-yellow-400' : 'text-gray-400'
+                            item.secondary_score >= 5 ? 'text-luxury-gold' : 'text-gray-400'
                           }`}>{item.secondary_score ?? '—'}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 mb-1">Data Quality</p>
-                          <p className={`font-bold ${
+                          <p className="text-[10px] uppercase tracking-wider text-luxury-purpleLight/60 font-semibold mb-1">Data Quality</p>
+                          <p className={`font-bold font-outfit text-sm ${
                             item.quality_score == null ? 'text-gray-500' :
                             item.quality_score >= 80 ? 'text-osrs-green' :
-                            item.quality_score >= 50 ? 'text-yellow-400' : 'text-osrs-red'
+                            item.quality_score >= 50 ? 'text-luxury-gold' : 'text-osrs-red'
                           }`}>
                             {item.quality_score != null ? `${item.quality_score.toFixed(0)} / 100` : '—'}
                             {item.quality_flags?.length > 0 && (

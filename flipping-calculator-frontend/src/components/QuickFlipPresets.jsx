@@ -54,27 +54,27 @@ export default function QuickFlipPresets({ onSearch, onTrending }) {
   };
 
   return (
-    <div className="card mb-4 md:mb-6">
-      <h2 className="text-base md:text-lg font-bold text-osrs-gold mb-2 md:mb-3">Quick Presets</h2>
-      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
+    <div className="card mb-4 md:mb-6 p-4 md:p-6">
+      <h2 className="text-base md:text-lg font-bold font-cinzel text-transparent bg-clip-text bg-gold-gradient tracking-wide mb-3 md:mb-4">Quick Presets</h2>
+      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2.5">
         {PRESETS.map((preset) => (
           <button
             key={preset.label}
-            className="bg-gray-700 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm transition-colors group relative text-center"
+            className="btn btn-secondary text-xs py-2 px-3 md:px-4 font-outfit relative group text-center flex-1 md:flex-none justify-center items-center"
             onClick={() => handlePreset(preset)}
           >
             {preset.label}
-            <span className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black text-xs text-gray-300 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            <span className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-luxury-darker border border-luxury-border text-[10px] text-luxury-purpleLight/90 font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none z-10 shadow-luxury-shadow">
               {preset.description}
             </span>
           </button>
         ))}
         <button
-          className="bg-gray-700 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm transition-colors group relative text-center"
+          className="btn btn-secondary text-xs py-2 px-3 md:px-4 font-outfit relative group text-center flex-1 md:flex-none justify-center items-center"
           onClick={onTrending}
         >
           📈 Trending
-          <span className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black text-xs text-gray-300 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          <span className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-luxury-darker border border-luxury-border text-[10px] text-luxury-purpleLight/90 font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none z-10 shadow-luxury-shadow">
             Top 10 by price momentum
           </span>
         </button>
