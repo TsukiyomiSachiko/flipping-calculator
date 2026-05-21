@@ -47,47 +47,53 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <Navigation />
-      
-      <div className="container mx-auto px-3 md:px-4 pb-8">
-        {/* Sync Items Button - shown on first load or in settings */}
-        <div className="mb-4">
-          <button
-            className="btn btn-secondary text-sm"
-            onClick={handleSyncClick}
-            disabled={syncMutation.isPending}
-          >
-            {syncMutation.isPending ? 'Syncing...' : '🔄 Sync Items from OSRS Wiki'}
-          </button>
-        </div>
+    <div className="min-h-screen bg-luxury-dark text-gray-200 font-outfit relative overflow-hidden flex flex-col justify-between">
+      {/* Floating Luxurious Background Auroras */}
+      <div className="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] rounded-full bg-luxury-purple/10 blur-[130px] pointer-events-none animate-float-slow" />
+      <div className="absolute bottom-[-150px] right-[-150px] w-[500px] h-[500px] rounded-full bg-luxury-gold/5 blur-[130px] pointer-events-none animate-float-delayed" />
 
-        {/* Success/Error notification */}
-        {syncResult && (
-          <div className={`mb-4 p-4 rounded-lg ${
-            syncResult.type === 'success' ? 'bg-green-900 border border-green-600' : 'bg-red-900 border border-red-600'
-          }`}>
-            <div className="flex justify-between items-center">
-              <span>
-                {syncResult.type === 'success' ? '✅' : '❌'} {syncResult.message}
-              </span>
-              <button
-                className="text-gray-300 hover:text-white"
-                onClick={() => setSyncResult(null)}
-              >
-                ✕
-              </button>
-            </div>
+      <div className="w-full relative z-10">
+        <Navigation />
+        
+        <div className="container mx-auto px-3 md:px-4 pb-8">
+          {/* Sync Items Button - shown on first load or in settings */}
+          <div className="mb-4">
+            <button
+              className="btn btn-secondary text-sm flex items-center gap-2"
+              onClick={handleSyncClick}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? 'Syncing...' : '🔄 Sync Items from OSRS Wiki'}
+            </button>
           </div>
-        )}
 
-        {/* Main Content */}
-        {activeView === 'flips' && <FlipsView />}
-        {activeView === 'longterm' && <LongTermFlipsView />}
-        {activeView === 'highalch' && <HighAlchView />}
-        {activeView === 'portfolio' && <PortfolioView />}
-        {activeView === 'history' && <HistoryView />}
-        {activeView === 'stats' && <StatsView />}
+          {/* Success/Error notification */}
+          {syncResult && (
+            <div className={`mb-4 p-4 rounded-xl backdrop-blur-md ${
+              syncResult.type === 'success' ? 'bg-green-950/40 border border-osrs-green/30 text-green-200' : 'bg-red-955/40 border border-osrs-red/30 text-red-200'
+            }`}>
+              <div className="flex justify-between items-center">
+                <span>
+                  {syncResult.type === 'success' ? '✅' : '❌'} {syncResult.message}
+                </span>
+                <button
+                  className="text-gray-400 hover:text-white transition-colors"
+                  onClick={() => setSyncResult(null)}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content */}
+          {activeView === 'flips' && <FlipsView />}
+          {activeView === 'longterm' && <LongTermFlipsView />}
+          {activeView === 'highalch' && <HighAlchView />}
+          {activeView === 'portfolio' && <PortfolioView />}
+          {activeView === 'history' && <HistoryView />}
+          {activeView === 'stats' && <StatsView />}
+        </div>
       </div>
 
       {/* Sync Confirmation Modal */}
@@ -103,10 +109,10 @@ function App() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 mt-12 py-6">
-        <div className="container mx-auto px-4 text-center text-gray-400 text-sm">
-          <p>OSRS Flipping Calculator - Track your Grand Exchange flips</p>
-          <p className="mt-1">Data provided by OSRS Wiki</p>
+      <footer className="border-t border-luxury-border/60 mt-12 py-6 relative z-10 bg-luxury-darker/60 backdrop-blur-sm">
+        <div className="container mx-auto px-4 text-center text-gray-500 text-sm font-outfit">
+          <p className="tracking-wide">OSRS Flipping Calculator — Track your Grand Exchange flips</p>
+          <p className="mt-1 text-xs text-luxury-purple/50">Data powered by the OSRS Wiki API</p>
         </div>
       </footer>
     </div>

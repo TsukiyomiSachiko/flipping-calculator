@@ -8,6 +8,7 @@ import PriceHistoryModal from '../components/PriceHistoryModal';
 import ItemSearchBar from '../components/ItemSearchBar';
 import ItemDetailModal from '../components/ItemDetailModal';
 import QuickFlipPresets from '../components/QuickFlipPresets';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function FlipsView() {
   const { filters, setFilters } = useAppStore();
@@ -67,7 +68,7 @@ export default function FlipsView() {
   return (
     <div>
       <div className="card mb-4 md:mb-6">
-        <h2 className="text-base md:text-lg font-bold text-osrs-gold mb-2 md:mb-3">Item Lookup</h2>
+        <h2 className="text-base md:text-lg font-black font-cinzel text-transparent bg-clip-text bg-gold-gradient tracking-wide mb-3">Item Lookup</h2>
         <ItemSearchBar
           onSelectItem={(item) => {
             setDetailItem(item);
@@ -80,8 +81,8 @@ export default function FlipsView() {
       <FlipSearchFilters onSearch={() => handleSearch()} />
 
       {isLoading && (
-        <div className="card text-center py-12">
-          <p className="text-gray-400">{isTrending ? 'Finding trending items...' : 'Searching for flips...'}</p>
+        <div className="card flex justify-center py-12 mb-4 md:mb-6">
+          <LoadingSpinner message={isTrending ? 'Finding trending items...' : 'Searching for flips...'} />
         </div>
       )}
 

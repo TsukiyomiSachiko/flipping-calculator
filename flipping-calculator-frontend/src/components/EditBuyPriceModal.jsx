@@ -45,38 +45,38 @@ export default function EditBuyPriceModal({ flip, isOpen, onClose, onConfirm, is
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="card max-w-md w-full">
-        <h3 className="text-xl font-bold mb-4">Edit Buy Price</h3>
+    <div className="fixed inset-0 bg-luxury-darker/80 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4 animate-fade-in">
+      <div className="bg-luxury-card backdrop-blur-xl rounded-2xl w-full max-w-md p-4 md:p-6 border border-luxury-purple/20 shadow-luxury-shadow shadow-purple-glow">
+        <h3 className="text-xl font-bold mb-4 bg-gold-gradient bg-clip-text text-transparent font-cinzel">Edit Buy Price</h3>
         
         <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-400 mb-2">
+          <div className="bg-luxury-darker/40 backdrop-blur-md border border-luxury-purple/10 rounded-xl p-4">
+            <p className="text-sm font-semibold text-luxury-gold mb-2 font-cinzel">
               {flip.item_name}
             </p>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Current Price:</span>
-              <span className="font-bold">{formatGP(flip.buy_price)}</span>
+            <div className="flex justify-between text-xs font-mono text-luxury-purpleLight/70">
+              <span>Current Price:</span>
+              <span className="font-bold text-white">{formatGP(flip.buy_price)}</span>
             </div>
             {quantityBought > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Quantity Bought:</span>
-                <span>{quantityBought.toLocaleString()}</span>
+              <div className="flex justify-between text-xs font-mono text-luxury-purpleLight/70 mt-1">
+                <span>Quantity Bought:</span>
+                <span className="text-white">{quantityBought.toLocaleString()}</span>
               </div>
             )}
             {intendedQty > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Intended Quantity:</span>
-                <span>{intendedQty.toLocaleString()}</span>
+              <div className="flex justify-between text-xs font-mono text-luxury-purpleLight/70 mt-1">
+                <span>Intended Quantity:</span>
+                <span className="text-white">{intendedQty.toLocaleString()}</span>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1">New Buy Price</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-purpleLight mb-2">New Buy Price</label>
             <input
               type="number"
-              className="input w-full"
+              className="input w-full font-mono"
               value={newPrice}
               onChange={(e) => {
                 setNewPrice(e.target.value);
@@ -85,26 +85,26 @@ export default function EditBuyPriceModal({ flip, isOpen, onClose, onConfirm, is
               placeholder="Enter new price"
               autoFocus
             />
-            {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
+            {error && <p className="text-osrs-red text-xs mt-1.5 font-medium">{error}</p>}
           </div>
 
           {!isNaN(parseInt(newPrice)) && parseInt(newPrice) !== flip.buy_price && (
-            <div className="bg-gray-700 p-3 rounded space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Price Change:</span>
+            <div className="bg-luxury-darker/40 backdrop-blur-md border border-luxury-purple/10 p-4 rounded-xl space-y-2 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-luxury-purpleLight/70">Price Change:</span>
                 <span className={priceDiff > 0 ? 'text-osrs-red' : 'text-osrs-green'}>
                   {priceDiff > 0 ? '+' : ''}{formatGP(priceDiff)}
                 </span>
               </div>
               {cashAdjustment !== 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Cash Adjustment:</span>
+                <div className="flex justify-between">
+                  <span className="text-luxury-purpleLight/70">Cash Adjustment:</span>
                   <span className={cashAdjustment > 0 ? 'text-osrs-red' : 'text-osrs-green'}>
                     {cashAdjustment > 0 ? '-' : '+'}{formatGP(Math.abs(cashAdjustment))}
                   </span>
                 </div>
               )}
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-[10px] text-gray-400 mt-2 font-sans leading-relaxed">
                 {cashAdjustment > 0 
                   ? `You'll need ${formatGP(cashAdjustment)} more cash` 
                   : cashAdjustment < 0
@@ -114,7 +114,7 @@ export default function EditBuyPriceModal({ flip, isOpen, onClose, onConfirm, is
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               className="btn btn-secondary flex-1"
               onClick={onClose}

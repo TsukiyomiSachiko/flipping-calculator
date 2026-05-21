@@ -39,46 +39,50 @@ export default function LoginView() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 to-gray-800">
-      <div className="max-w-md w-full bg-gray-800 border-2 border-osrs-gold rounded-xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-luxury-dark text-gray-200 font-outfit relative overflow-hidden flex items-center justify-center p-4">
+      {/* Floating Background Glows */}
+      <div className="absolute top-[-100px] left-[-100px] w-[450px] h-[450px] rounded-full bg-luxury-purple/10 blur-[120px] pointer-events-none animate-float-slow" />
+      <div className="absolute bottom-[-100px] right-[-100px] w-[450px] h-[450px] rounded-full bg-luxury-gold/5 blur-[120px] pointer-events-none animate-float-delayed" />
+
+      <div className="card max-w-md w-full overflow-hidden relative z-10 p-0 border border-luxury-border/60">
         {/* Header */}
-        <div className="bg-gray-900 p-6 border-b border-gray-700 text-center">
-          <h1 className="text-3xl font-bold text-osrs-gold tracking-wider drop-shadow-md">
+        <div className="bg-luxury-darker/60 p-8 border-b border-luxury-border/60 text-center">
+          <h1 className="text-3xl font-black font-cinzel text-transparent bg-clip-text bg-gold-gradient tracking-widest drop-shadow-md">
             RuneScape Flipping
           </h1>
-          <p className="text-gray-400 mt-2 text-sm">
+          <p className="text-luxury-purpleLight/70 mt-2 text-xs font-bold uppercase tracking-wider font-outfit">
             {isRegistering ? 'Create a new account' : 'Sign in to your account'}
           </p>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-8">
           {error && (
-            <div className="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-lg mb-4 text-sm text-center">
-              {error}
+            <div className="bg-red-950/40 border border-osrs-red/30 text-red-200 p-3.5 rounded-xl mb-6 text-sm text-center backdrop-blur-md">
+              ⚠️ {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+              <label className="block text-xs font-bold text-luxury-purpleLight/60 uppercase tracking-wider mb-2">Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-osrs-gold focus:outline-none"
+                className="input w-full"
                 placeholder="Enter username"
                 disabled={isLoading}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+              <label className="block text-xs font-bold text-luxury-purpleLight/60 uppercase tracking-wider mb-2">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-osrs-gold focus:outline-none"
+                className="input w-full"
                 placeholder="Enter password"
                 disabled={isLoading}
               />
@@ -87,9 +91,19 @@ export default function LoginView() {
             <button
               type="submit"
               disabled={isLoading || !username || !password}
-              className="w-full bg-osrs-gold hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-lg transition-colors mt-4"
+              className="btn btn-primary w-full py-3.5 mt-6"
             >
-              {isLoading ? 'Processing...' : (isRegistering ? 'Create Account' : 'Sign In')}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-luxury-darker" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                isRegistering ? 'Create Account' : 'Sign In'
+              )}
             </button>
           </form>
 
@@ -101,7 +115,7 @@ export default function LoginView() {
                 setUsername('');
                 setPassword('');
               }}
-              className="text-sm text-gray-400 hover:text-osrs-gold underline"
+              className="text-sm text-luxury-purpleLight/80 hover:text-luxury-gold transition-colors font-medium underline underline-offset-4 decoration-luxury-purpleLight/30 hover:decoration-luxury-gold"
             >
               {isRegistering ? 'Already have an account? Sign in' : "Don't have an account? Create one"}
             </button>

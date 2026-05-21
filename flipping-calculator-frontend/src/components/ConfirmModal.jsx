@@ -6,17 +6,17 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
   const handleClose = onClose || onCancel;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 border border-gray-700">
-        <h2 className="text-xl font-bold mb-4 text-white">{title}</h2>
+    <div className="fixed inset-0 bg-luxury-darker/80 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4 animate-fade-in">
+      <div className="bg-luxury-card backdrop-blur-xl rounded-2xl w-full max-w-md p-6 border border-luxury-purple/20 shadow-luxury-shadow shadow-purple-glow">
+        <h2 className="text-xl font-bold mb-4 bg-gold-gradient bg-clip-text text-transparent font-cinzel">{title}</h2>
         
-        <div className={`mb-6 whitespace-pre-line ${danger ? 'text-osrs-red' : 'text-gray-300'}`}>
+        <div className={`mb-6 text-sm whitespace-pre-line leading-relaxed ${danger ? 'text-osrs-red font-semibold' : 'text-luxury-purpleLight'}`}>
           {message}
         </div>
 
         <div className="flex gap-3">
           <button
-            className={`btn flex-1 ${danger ? 'bg-osrs-red hover:bg-red-600 text-white' : 'btn-primary'}`}
+            className={`btn flex-1 ${danger ? 'bg-gradient-to-r from-red-800 to-osrs-red text-white border border-red-500/20 hover:from-red-700 hover:to-red-500 shadow-[0_4px_15px_rgba(244,63,94,0.15)] hover:shadow-[0_6px_20px_rgba(244,63,94,0.25)]' : 'btn-primary'}`}
             onClick={onConfirm}
             disabled={isLoading}
           >

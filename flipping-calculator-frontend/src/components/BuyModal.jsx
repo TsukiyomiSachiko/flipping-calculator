@@ -29,71 +29,73 @@ export default function BuyModal({ flip, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[70]">
-      <div className="bg-gray-800 rounded-lg p-4 md:p-6 max-w-md w-full mx-3 md:mx-4">
-        <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-osrs-gold">Buy {flip.name}</h2>
+    <div className="fixed inset-0 bg-luxury-darker/80 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4 animate-fade-in">
+      <div className="bg-luxury-card backdrop-blur-xl rounded-2xl w-full max-w-md p-4 md:p-6 border border-luxury-purple/20 shadow-luxury-shadow shadow-purple-glow">
+        <h2 className="text-lg md:text-2xl font-bold mb-4 md:mb-6 bg-gold-gradient bg-clip-text text-transparent font-cinzel">
+          Buy {flip.name}
+        </h2>
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Quantity Bought Now</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-purpleLight mb-2">Quantity Bought Now</label>
             <input
               type="number"
-              className="input w-full"
+              className="input w-full font-mono"
               value={quantity}
               onChange={(e) => setQuantity(Math.min(parseInt(e.target.value) || 0, maxQuantity))}
               min="0"
               max={maxQuantity}
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
               How many you&apos;re logging right now (0 = offer placed, nothing filled yet)
             </p>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Intended Total Quantity</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-purpleLight mb-2">Intended Total Quantity</label>
             <input
               type="number"
-              className="input w-full"
+              className="input w-full font-mono"
               value={intendedQuantity}
               onChange={(e) => setIntendedQuantity(Math.min(parseInt(e.target.value) || 0, maxQuantity))}
               min="1"
               max={maxQuantity}
               required
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
               Target amount (prevents adding more than intended). Max GE Limit: {maxQuantity.toLocaleString()}
             </p>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Price per Item</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-luxury-purpleLight mb-2">Price per Item</label>
             <input
               type="number"
-              className="input w-full"
+              className="input w-full font-mono"
               value={price}
               onChange={(e) => setPrice(parseInt(e.target.value) || 0)}
               min="1"
               required
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Suggested: {formatExactGP(flip.buy_price)}
+            <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
+              Suggested: <span className="text-luxury-gold font-mono">{formatExactGP(flip.buy_price)}</span>
             </p>
           </div>
 
-          <div className="mb-6 p-4 bg-gray-700 rounded-lg">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-400">Total Cost:</span>
-              <span className="font-bold text-osrs-red">{formatGP(totalCost)}</span>
+          <div className="mb-6 p-4 bg-luxury-darker/40 backdrop-blur-md border border-luxury-purple/10 rounded-xl">
+            <div className="flex justify-between mb-2 text-sm">
+              <span className="text-luxury-purpleLight/70">Total Cost:</span>
+              <span className="font-bold font-mono text-osrs-red">{formatGP(totalCost)}</span>
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-400">Expected Sell:</span>
-              <span className="font-bold text-osrs-green">
+            <div className="flex justify-between mb-2 text-sm">
+              <span className="text-luxury-purpleLight/70">Expected Sell:</span>
+              <span className="font-bold font-mono text-osrs-green">
                 {formatGP(quantity * flip.sell_price)}
               </span>
             </div>
-            <div className="flex justify-between border-t border-gray-600 pt-2">
-              <span className="text-gray-400">Expected Profit:</span>
-              <span className="font-bold text-osrs-gold">
+            <div className="flex justify-between border-t border-luxury-border pt-2 text-sm">
+              <span className="text-luxury-purpleLight/70">Expected Profit:</span>
+              <span className="font-bold font-mono text-luxury-gold">
                 {formatGP(quantity * flip.profit)}
               </span>
             </div>
