@@ -14,17 +14,17 @@ export default function ItemDetailModal({ item, onClose }) {
   const [copiedPrice, setCopiedPrice] = useState(null);
   const { filters } = useAppStore();
 
-  // If we already have full flip data (from the table), skip the fetch
-  const hasFlipData = item?.buy_price != null;
+  // Always fetch live data to enrich with long-term and high-alch stats
+  const hasCachedPrices = item?.buy_price != null;
   const { data: liveItem, isLoading, error } = useItemWithPrices(
-    hasFlipData ? null : item?.id,
+    item?.id,
     filters.cash
   );
 
   if (!item) return null;
 
-  // Use flip data if available, otherwise use the live fetched data
-  const displayItem = hasFlipData ? item : liveItem;
+  // Use live data if loaded, otherwise fall back to cached/props data
+  const displayItem = liveItem || item;
   
   const copyPrice = (price, type) => {
     navigator.clipboard.writeText(price.toString());
@@ -70,11 +70,11 @@ export default function ItemDetailModal({ item, onClose }) {
 
           {/* Content */}
           <div className="p-4 md:p-6">
-            {!hasFlipData && isLoading && (
+            {!hasCachedPrices && isLoading && (
               <div className="text-center py-8 text-gray-400">Loading live prices...</div>
             )}
 
-            {!hasFlipData && error && (
+            {!hasCachedPrices && error && (
               <div className="text-center py-8 text-red-400">Failed to load prices.</div>
             )}
 
@@ -134,6 +134,69 @@ export default function ItemDetailModal({ item, onClose }) {
                       displayItem.secondary_score >= 5 ? 'text-yellow-400' : 'text-gray-400'
                     }
                   />
+                </div>
+
+                {/* Long-Term Flipping Stats (7-Day Projection) */}
+                <div className="mt-4 border-t border-gray-700 pt-4">
+                  <h3 className="text-sm font-semibold text-osrs-gold mb-3 flex items-center gap-1.5">
+                    <span>⏳</span> Long-Term Flipping Stats (7-Day Projection)
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <DataCard
+                      label="Expected Sell Price"
+                      value={displayItem.expected_sell_price != null ? formatExactGP(displayItem.expected_sell_price) : '—'}
+                      color="text-osrs-green"
+                    />
+                    <DataCard
+                      label="Expected Profit"
+                      value={displayItem.expected_profit_7d != null ? formatGP(displayItem.expected_profit_7d) : '—'}
+                      color="text-osrs-gold"
+                    />
+                    <DataCard
+                      label="Expected ROI"
+                      value={displayItem.expected_roi_7d != null ? formatPercent(displayItem.expected_roi_7d) : '—'}
+                      color={
+                        displayItem.expected_roi_7d >= 10 ? 'text-osrs-green' :
+                        displayItem.expected_roi_7d >= 5 ? 'text-yellow-400' :
+                        displayItem.expected_roi_7d >= 0 ? 'text-gray-400' : 'text-osrs-red'
+                      }
+                    />
+                    <DataCard
+                      label="Long-Term Score"
+                      value={displayItem.long_term_score != null ? `${displayItem.long_term_score} / 100` : '—'}
+                      color={
+                        displayItem.long_term_score >= 70 ? 'text-osrs-green' :
+                        displayItem.long_term_score >= 45 ? 'text-yellow-400' :
+                        displayItem.long_term_score >= 25 ? 'text-orange-400' : 'text-gray-400'
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* High Alchemy Stats */}
+                <div className="mt-4 border-t border-gray-700 pt-4">
+                  <h3 className="text-sm font-semibold text-osrs-gold mb-3 flex items-center gap-1.5">
+                    <span>🔥</span> High Alchemy Stats
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                    <DataCard
+                      label="High Alch Value"
+                      value={displayItem.highalch != null && displayItem.highalch > 0 ? formatExactGP(displayItem.highalch) : '—'}
+                    />
+                    <DataCard
+                      label="Nature Rune Cost"
+                      value={displayItem.nature_rune_price != null ? formatExactGP(displayItem.nature_rune_price) : '—'}
+                      color="text-osrs-red"
+                    />
+                    <DataCard
+                      label="High Alch Profit"
+                      value={displayItem.highalch_profit != null ? formatExactGP(displayItem.highalch_profit) : '—'}
+                      color={
+                        displayItem.highalch_profit > 0 ? 'text-osrs-green' :
+                        displayItem.highalch_profit < 0 ? 'text-osrs-red' : 'text-gray-400'
+                      }
+                    />
+                  </div>
                 </div>
               </>
             )}
