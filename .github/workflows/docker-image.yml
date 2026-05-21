@@ -19,6 +19,9 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './flipping-calculator-frontend/package-lock.json'
         
+    - name: Configure Git for Private Repo Access
+      run: git config --global url."https://${{ secrets.THEME_REPO_PAT }}@github.com/".insteadOf "https://github.com/"
+      
     - name: Install dependencies
       run: npm ci
       working-directory: ./flipping-calculator-frontend
@@ -106,6 +109,8 @@ jobs:
         context: ./flipping-calculator-frontend
         file: ./flipping-calculator-frontend/Dockerfile
         push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        build-args: |
+          THEME_REPO_PAT=${{ secrets.THEME_REPO_PAT }}
         tags: |
           ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-frontend:latest
           ghcr.io/${{ env.REPO_LOWERCASE }}/flipping-calculator-frontend:${{ github.sha }}
