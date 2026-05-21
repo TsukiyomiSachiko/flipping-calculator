@@ -15,3 +15,5 @@ When refining on work you just produced, remain in the branch you made for it
 When in doubt on whether to create a new feature branch, ask the user if they want to have a new branch created
 
 Always checkout your new branch from main, so we can work on multiple features concurrently
+
+Important: When you receive a prompt, make sure the branch you're working on is still up-to-date with main, if it's not, update it.

@@ -143,6 +143,13 @@ class FlipService:
             # Get long-term metrics
             trajectory = DataQualityService.get_historical_trajectory(item['id'])
             volatility = DataQualityService.get_historical_volatility(item['id'])
+            max_drawdown_30d = DataQualityService.get_historical_drawdown(item['id'])
+            price_percentile_30d = DataQualityService.get_historical_percentile(item['id'])
+            crash_risk_score = DataQualityService.get_historical_crash_risk(item['id'])
+
+            risk_to_reward_ratio = None
+            if max_drawdown_30d is not None and roi is not None:
+                risk_to_reward_ratio = round(max_drawdown_30d / roi, 2) if roi > 0 else 99.9
 
             expected_profit_7d = None
             expected_roi_7d = None
@@ -157,6 +164,16 @@ class FlipService:
                     expected_roi_7d = round((expected_profit_7d / buy_price) * 100, 2)
                 else:
                     expected_roi_7d = 0.0
+
+            score = ItemService.calculate_score(
+                profit=profit, roi=roi, volume=volume,
+                ge_limit=ge_limit, buy_price=buy_price, cash=cash,
+                momentum=momentum,
+            )
+            
+            risk_adjusted_score = score
+            if crash_risk_score is not None:
+                risk_adjusted_score = max(0.0, score - crash_risk_score * 0.35)
 
             profitable_items.append({
                 "id": item['id'],
@@ -173,11 +190,12 @@ class FlipService:
                 "profit_at_limit": profit_at_limit,
                 "max_qty": max_qty,
                 "your_profit": your_profit,
-                "score": ItemService.calculate_score(
-                    profit=profit, roi=roi, volume=volume,
-                    ge_limit=ge_limit, buy_price=buy_price, cash=cash,
-                    momentum=momentum,
-                ),
+                "score": score,
+                "risk_adjusted_score": risk_adjusted_score,
+                "crash_risk_score": crash_risk_score,
+                "max_drawdown_30d": max_drawdown_30d,
+                "price_percentile_30d": price_percentile_30d,
+                "risk_to_reward_ratio": risk_to_reward_ratio,
                 "secondary_score": ItemService.calculate_erebus_score(
                     buy_price=buy_price,
                     sell_price=sell_price,
@@ -235,6 +253,12 @@ class FlipService:
             profitable_items.sort(key=lambda x: x['volume'] or 0, reverse=True)
         elif sort_by == 'score':
             profitable_items.sort(key=lambda x: x['score'], reverse=True)
+        elif sort_by == 'risk_adjusted':
+            profitable_items.sort(key=lambda x: x['risk_adjusted_score'], reverse=True)
+        elif sort_by == 'crash_risk':
+            profitable_items.sort(key=lambda x: (x.get('crash_risk_score') is None, x.get('crash_risk_score') or 999.0, -(x.get('score') or 0)))
+        elif sort_by == 'risk_reward':
+            profitable_items.sort(key=lambda x: (x.get('risk_to_reward_ratio') is None, x.get('risk_to_reward_ratio') or 999.0, -(x.get('score') or 0)))
         elif sort_by == 'erebus':
             profitable_items.sort(key=lambda x: (x['secondary_score'] is not None, x['secondary_score'] or 0), reverse=True)
         elif sort_by == 'long_term':
