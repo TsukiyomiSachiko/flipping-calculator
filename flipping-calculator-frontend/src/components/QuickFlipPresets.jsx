@@ -36,6 +36,11 @@ const PRESETS = [
     description: '25 least-risk items sorted by crash risk',
     filters: { minProfit: 0, minVolume: 0, minRoi: null, maxRoi: null, minLimitProfit: null, sortBy: 'crash_risk', limit: 25 },
   },
+  {
+    label: '⚖️ Risk/Reward',
+    description: '25 best risk-to-reward ratio flips',
+    filters: { minProfit: 0, minVolume: 0, minRoi: null, maxRoi: null, minLimitProfit: null, sortBy: 'risk_reward', limit: 25 },
+  },
 ];
 
 export default function QuickFlipPresets({ onSearch, onTrending }) {
