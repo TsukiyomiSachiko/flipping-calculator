@@ -28,10 +28,77 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for better error messages
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response interceptor for better error messages and token refresh handling
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 Unauthorized errors (expired token)
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      // If we failed refreshing itself, prevent loop and force logout
+      if (originalRequest.url === '/api/auth/refresh') {
+        const { logout } = useAppStore.getState();
+        logout();
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const { refreshToken, setToken, setRefreshToken, logout } = useAppStore.getState();
+
+      if (!refreshToken) {
+        logout();
+        isRefreshing = false;
+        return Promise.reject(error);
+      }
+
+      try {
+        const response = await axios.post('/api/auth/refresh', { refresh_token: refreshToken });
+        const { access_token, refresh_token } = response.data;
+
+        setToken(access_token);
+        setRefreshToken(refresh_token);
+
+        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+        processQueue(null, access_token);
+        isRefreshing = false;
+
+        return api(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        logout();
+        isRefreshing = false;
+        return Promise.reject(refreshErr);
+      }
+    }
+
     if (!error.response) {
       error.message = 'Cannot connect to API. Is the backend running?';
     } else if (error.response.status === 500) {
