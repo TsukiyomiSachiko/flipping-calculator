@@ -1,260 +1,79 @@
+@import "tsuki-theme/src/tsuki-theme.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: 'Outfit', sans-serif;
-  color-scheme: dark;
-  background-color: #080512;
-  color: #e2e8f0;
-}
-
 body {
-  margin: 0;
-  min-height: 100vh;
-  background: radial-gradient(circle at 50% 50%, #150f2b 0%, #080512 100%);
-  background-attachment: fixed;
-  overflow-x: hidden;
-}
-
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #080512;
-  border-left: 1px solid rgba(139, 92, 246, 0.05);
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1c1538;
-  border-radius: 4px;
-  border: 1px solid rgba(139, 92, 246, 0.15);
-  transition: background 0.3s;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #312560;
-  border-color: #d4af37;
-}
-
-/* Global Headings styling to inherit Cinzel font */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Cinzel', serif;
-  letter-spacing: 0.04em;
-}
-
-/* Custom Selection style */
-::selection {
-  background-color: rgba(139, 92, 246, 0.4);
-  color: #fff;
+  @apply tsuki-body;
 }
 
 @layer components {
-  /* Luxurious Cards */
+  /* Class mappings to reuse TsukiTheme styles */
   .card {
-    background: linear-gradient(135deg, rgba(24, 18, 48, 0.7) 0%, rgba(13, 9, 25, 0.85) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 92, 246, 0.12);
-    border-radius: 1rem;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 92, 246, 0.05);
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    @apply tsuki-card;
   }
   
-  .card:hover {
-    border-color: rgba(212, 175, 55, 0.25);
-    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.08);
-  }
-
-  /* Luxurious Buttons */
   .btn {
-    @apply px-5 py-2.5 rounded-xl font-semibold tracking-wide transition-all duration-300 transform outline-none select-none;
-  }
-
-  .btn:active {
-    @apply scale-[0.97] translate-y-0;
+    @apply tsuki-btn;
   }
   
   .btn-primary {
-    background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
-    color: #04020a;
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.15);
-  }
-  
-  .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #fff 0%, #e2c050 50%, #b88d22 100%);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.25);
-    transform: translateY(-2px);
-  }
-
-  .btn-primary:disabled {
-    @apply opacity-50 cursor-not-allowed transform-none shadow-none;
+    @apply tsuki-btn-primary;
   }
   
   .btn-secondary {
-    background: rgba(24, 18, 48, 0.5);
-    color: #c084fc;
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    @apply tsuki-btn-secondary;
   }
   
-  .btn-secondary:hover:not(:disabled) {
-    background: rgba(37, 30, 71, 0.8);
-    color: #fff;
-    border-color: rgba(212, 175, 55, 0.35);
-    box-shadow: 0 6px 15px rgba(139, 92, 246, 0.1);
-    transform: translateY(-2px);
-  }
-
-  /* Luxurious Inputs & Selects */
   .input {
-    background: rgba(12, 9, 24, 0.8);
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    border-radius: 0.75rem;
-    padding: 0.625rem 1rem;
-    color: #fff;
-    font-weight: 500;
-    transition: all 0.3s ease;
+    @apply tsuki-input;
   }
   
-  .input:focus {
-    border-color: #d4af37;
-    background: rgba(18, 14, 34, 0.9);
-    outline: none;
-    box-shadow: 0 0 12px rgba(212, 175, 55, 0.15);
+  .luxury-table-container {
+    @apply tsuki-table-container;
+  }
+  
+  .luxury-table {
+    @apply tsuki-table;
   }
 
-  .input::placeholder {
-    color: #4b5563;
-  }
-}
-
-/* Animations */
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out;
-}
-
-/* Shimmer Loading Animation */
-.shimmer-bg {
-  background: linear-gradient(
-    90deg,
-    rgba(24, 18, 48, 0.7) 25%,
-    rgba(37, 29, 71, 0.9) 37%,
-    rgba(24, 18, 48, 0.7) 63%
-  );
-  background-size: 400% 100%;
-  animation: shimmer 1.5s ease infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Custom Table Styles */
-.luxury-table-container {
-  overflow-x: auto;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(139, 92, 246, 0.08);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  background: rgba(12, 9, 24, 0.4);
-}
-
-.luxury-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.luxury-table th {
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  color: #d4af37;
-  background: rgba(16, 12, 33, 0.9);
-  border-bottom: 2px solid rgba(139, 92, 246, 0.15);
-  padding: 1rem 0.75rem;
-  text-align: left;
-}
-
-.luxury-table td {
-  padding: 0.875rem 0.75rem;
-  font-size: 0.875rem;
-  border-bottom: 1px solid rgba(139, 92, 246, 0.06);
-  color: #cbd5e1;
-  transition: background-color 0.2s;
-}
-
-.luxury-table tr:hover td {
-  background-color: rgba(139, 92, 246, 0.04);
-  color: #fff;
-}
-
-.luxury-table tr.expanded-details td {
-  background-color: rgba(139, 92, 246, 0.02);
-  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
-}
-
-/* Mobile Optimizations */
-@media (max-width: 767px) {
-  .card {
-    padding: 1rem;
-    border-radius: 0.75rem;
+  .animate-slide-in-right {
+    @apply tsuki-animate-slide-in-right;
   }
 
-  .input {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
+  .shimmer-bg {
+    @apply tsuki-shimmer;
   }
 
-  .btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    border-radius: 0.75rem;
+  /* Custom spinner sizing overrides for the app */
+  .tsuki-spinner-sm {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .tsuki-spinner-sm::before {
+    border-width: 2px !important;
+  }
+  .tsuki-spinner-sm::after {
+    border-width: 2px !important;
+    top: 3px !important;
+    left: 3px !important;
+    right: 3px !important;
+    bottom: 3px !important;
   }
 
-  html, body, #root {
-    overflow-x: hidden;
-    max-width: 100vw;
+  .tsuki-spinner-lg {
+    width: 80px !important;
+    height: 80px !important;
   }
-
-  .container {
-    max-width: 100vw;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+  .tsuki-spinner-lg::before {
+    border-width: 4px !important;
   }
-
-  .card, [class*="bg-gray-700"] {
-    max-width: 100%;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  table {
-    table-layout: fixed;
-    width: 100%;
-  }
-
-  td, th {
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .tsuki-spinner-lg::after {
+    border-width: 4px !important;
+    top: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
   }
 }

@@ -1,5 +1,8 @@
+import tsukiThemePreset from 'tsuki-theme/tailwind-preset.js';
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  presets: [tsukiThemePreset],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -48,7 +51,6 @@ export default {
         'pulse-subtle': 'pulseSubtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'float-slow': 'floatSlow 8s ease-in-out infinite',
         'float-delayed': 'floatSlow 8s ease-in-out infinite 4s',
-        'shimmer': 'shimmer 2.5s linear infinite',
       },
       keyframes: {
         pulseSubtle: {
@@ -58,10 +60,6 @@ export default {
         floatSlow: {
           '0%, 100%': { transform: 'translateY(0) scale(1)' },
           '50%': { transform: 'translateY(-15px) scale(1.03)' },
-        },
-        shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
         }
       }
     },
