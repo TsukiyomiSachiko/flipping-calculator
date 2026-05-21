@@ -3,7 +3,7 @@ import { useAppStore } from '../stores/appStore';
 import { authApi } from '../services/api';
 
 export default function LoginView() {
-  const { setCurrentAccount, setToken } = useAppStore();
+  const { setCurrentAccount, setToken, setRefreshToken } = useAppStore();
   const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -25,9 +25,10 @@ export default function LoginView() {
         response = await authApi.login(username, password);
       }
       
-      const { access_token, account_id, name } = response.data;
+      const { access_token, refresh_token, account_id, name } = response.data;
       
       setToken(access_token);
+      setRefreshToken(refresh_token);
       setCurrentAccount({ id: account_id, name });
     } catch (err) {
       console.error('Auth failed:', err);

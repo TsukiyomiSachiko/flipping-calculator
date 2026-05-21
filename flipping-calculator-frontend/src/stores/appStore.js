@@ -8,10 +8,12 @@ export const useAppStore = create(
       accounts: [],
       currentAccount: null,
       token: null,
+      refreshToken: null,
       setAccounts: (accounts) => set({ accounts }),
       setCurrentAccount: (account) => set({ currentAccount: account }),
       setToken: (token) => set({ token }),
-      logout: () => set({ token: null, currentAccount: null }),
+      setRefreshToken: (refreshToken) => set({ refreshToken }),
+      logout: () => set({ token: null, refreshToken: null, currentAccount: null }),
       
       // Filter state
       filters: {
