@@ -31,6 +31,11 @@ const PRESETS = [
     description: 'Best flips in peak hours',
     filters: { minProfit: 0, minVolume: 5000, minRoi: null, maxRoi: null, minLimitProfit: null, sortBy: 'score', limit: 10 },
   },
+  {
+    label: '🛡️ Low Risk',
+    description: '25 least-risk items sorted by crash risk',
+    filters: { minProfit: 0, minVolume: 0, minRoi: null, maxRoi: null, minLimitProfit: null, sortBy: 'crash_risk', limit: 25 },
+  },
 ];
 
 export default function QuickFlipPresets({ onSearch, onTrending }) {
