@@ -18,7 +18,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
     "recharts": "^2.13.3",
-    "tsuki-theme": "github:TsukiyomiSachiko/TsukiTheme",
+    "tsuki-theme": "git+https://github.com/TsukiyomiSachiko/TsukiTheme.git",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
