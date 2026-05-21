@@ -1,16 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { formatGP, formatExactGP, formatPercent, getVolumeIndicator } from '../utils/formatters';
 
 const FlipTable = React.memo(function FlipTable({ flips, onSelectFlip, onShowDetail }) {
   const [expandedRows, setExpandedRows] = useState({});
 
-  const toggleRow = (rowId) => {
+  // ⚡ Bolt: wrap in useCallback to prevent DesktopTable re-rendering unnecessarily
+  const toggleRow = useCallback((rowId) => {
     setExpandedRows((prev) => ({
       ...prev,
       [rowId]: !prev[rowId],
     }));
-  };
+  }, []);
 
   if (!flips || flips.length === 0) {
     return (
