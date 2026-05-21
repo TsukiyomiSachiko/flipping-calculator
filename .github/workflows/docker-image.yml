@@ -9,6 +9,7 @@ on:
 jobs:
   frontend-lint:
     runs-on: ubuntu-latest
+    environment: BuildTimeRequirements
     steps:
     - uses: actions/checkout@v4
     
@@ -73,6 +74,7 @@ jobs:
   build-and-push:
     needs: [frontend-lint, backend-test]
     runs-on: ubuntu-latest
+    environment: BuildTimeRequirements
     permissions:
       contents: read
       packages: write
