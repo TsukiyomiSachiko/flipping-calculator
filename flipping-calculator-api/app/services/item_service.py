@@ -478,6 +478,45 @@ class ItemService:
                 max_qty = affordable_qty
                 your_profit = profit * affordable_qty
 
+        # Get long-term metrics
+        from app.services.data_quality_service import DataQualityService
+        trajectory = DataQualityService.get_historical_trajectory(item_id)
+        volatility = DataQualityService.get_historical_volatility(item_id)
+
+        expected_profit_7d = None
+        expected_roi_7d = None
+        expected_sell_price = None
+        long_term_score = None
+
+        if trajectory is not None and trajectory > 0.0:
+            expected_sell_price = int(sell_price * (1 + trajectory / 100)) if sell_price else None
+            if expected_sell_price and buy_price:
+                tax = calculate_ge_tax(expected_sell_price)
+                expected_profit_7d = expected_sell_price - buy_price - tax
+                if buy_price > 0:
+                    expected_roi_7d = round((expected_profit_7d / buy_price) * 100, 2)
+                else:
+                    expected_roi_7d = 0.0
+
+        if buy_price and sell_price:
+            long_term_score = ItemService.calculate_long_term_score(
+                profit=profit,
+                roi=roi,
+                volume=volume,
+                trajectory=trajectory,
+                volatility=volatility,
+            )
+
+        # Get highalch profit (subtract buy_price and Nature Rune price)
+        # Nature Rune ID is 561
+        nat_rune_data = latest_data.get("data", {}).get("561", {})
+        nat_rune_price = nat_rune_data.get("low") or nat_rune_data.get("high") or 90
+        
+        highalch_profit = None
+        highalch_value = item.get("highalch") or 0
+        if highalch_value > 0 and buy_price is not None:
+            highalch_profit = highalch_value - (buy_price + nat_rune_price)
+
         return {
             "id": item['id'],
             "name": item['name'],
@@ -507,4 +546,12 @@ class ItemService:
                 volume_5m=volume_5m,
                 volume_1h=volume,
             ),
+            "trajectory": trajectory,
+            "volatility": volatility,
+            "expected_sell_price": expected_sell_price,
+            "expected_profit_7d": expected_profit_7d,
+            "expected_roi_7d": expected_roi_7d,
+            "long_term_score": long_term_score,
+            "highalch_profit": highalch_profit,
+            "nature_rune_price": nat_rune_price,
         }

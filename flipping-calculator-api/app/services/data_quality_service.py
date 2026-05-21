@@ -486,11 +486,33 @@ class DataQualityService:
         return cls._calculate_historical_volatility(item_id)
 
     @classmethod
+    def _calculate_trajectory_on_the_fly(cls, item_id: int) -> Optional[float]:
+        """Calculate trajectory on the fly (bypass cache)"""
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                month_ago = datetime.now(timezone.utc) - timedelta(days=30)
+                cursor.execute('''
+                    SELECT timestamp, price_high, price_low
+                    FROM price_history
+                    WHERE item_id = ?
+                    AND timestamp >= ?
+                    ORDER BY timestamp ASC
+                ''', (item_id, month_ago))
+                rows = [dict(row) for row in cursor.fetchall()]
+                return cls._calculate_trend_trajectory(rows)
+        except Exception as e:
+            logger.error(f"Error calculating trajectory on the fly for item {item_id}: {e}")
+            return None
+
+    @classmethod
     def get_historical_trajectory(cls, item_id: int) -> Optional[float]:
         """Get the cached 7-day trajectory percentage for an item."""
         if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
-            return cls._trajectory_cache.get(item_id)
-        return None
+            if item_id in cls._trajectory_cache:
+                return cls._trajectory_cache[item_id]
+        # Fallback if cache is missed
+        return cls._calculate_trajectory_on_the_fly(item_id)
 
     @classmethod
     def prewarm_cache(cls):

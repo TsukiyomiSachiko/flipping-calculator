@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flipping_user
+      POSTGRES_PASSWORD: flipping_password
+      POSTGRES_DB: osrs_flipping
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flipping_user -d osrs_flipping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://flipping_user:flipping_password@db/osrs_flipping
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ../flipping-calculator-frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3080:80"  # Exposed on port 3080 to avoid conflicts with other services
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
