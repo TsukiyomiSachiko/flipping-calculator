@@ -36,6 +36,9 @@ class DataQualityService:
     _volatility_cache: Dict[int, float] = {}
     _stability_cache: Dict[int, float] = {}
     _trajectory_cache: Dict[int, float] = {}
+    _drawdown_cache: Dict[int, float] = {}
+    _percentile_cache: Dict[int, float] = {}
+    _crash_risk_cache: Dict[int, float] = {}
     _cache_timestamp: Optional[datetime] = None
     CACHE_TTL_HOURS = 1
 
@@ -231,7 +234,7 @@ class DataQualityService:
         """
         # If no historical volatility provided, calculate from price_history
         if historical_volatility is None:
-            historical_volatility = cls._calculate_historical_volatility(item_id)
+            historical_volatility = cls.get_historical_volatility(item_id)
         
         # If still no data, assume medium quality
         if historical_volatility is None or historical_volatility == 0:
@@ -299,72 +302,7 @@ class DataQualityService:
         trajectory_pct = ((future_trend_price - current_trend_price) / current_trend_price) * 100
         return trajectory_pct
     
-    @classmethod
-    def _calculate_historical_volatility(
-        cls, item_id: int, days: int = 30
-    ) -> Optional[float]:
-        """
-        Calculate standard deviation of hourly price changes over past N days.
-        Uses in-memory cache if available to prevent N+1 query problems.
-        Returns volatility as % or None if insufficient data.
-        """
-        # Check cache
-        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
-            if item_id in cls._volatility_cache:
-                return cls._volatility_cache[item_id]
 
-        try:
-            with get_db() as conn:
-                cursor = conn.cursor()
-                
-                # Get hourly price snapshots for past N days
-                since_datetime = datetime.now(timezone.utc) - timedelta(days=days)
-                
-                cursor.execute('''
-                    SELECT timestamp, price_high, price_low
-                    FROM price_history
-                    WHERE item_id = ?
-                    AND timestamp >= ?
-                    ORDER BY timestamp ASC
-                ''', (item_id, since_datetime))
-                
-                rows = cursor.fetchall()
-                
-                if len(rows) < 24:  # Need at least 24 hours of data
-                    cls._volatility_cache[item_id] = None
-                    return None
-                
-                # Calculate hourly midpoint price changes
-                changes = []
-                for i in range(1, len(rows)):
-                    prev_high = rows[i-1]['price_high']
-                    prev_low = rows[i-1]['price_low']
-                    curr_high = rows[i]['price_high']
-                    curr_low = rows[i]['price_low']
-                    
-                    # Skip if any price is None
-                    if prev_high is None or prev_low is None or curr_high is None or curr_low is None:
-                        continue
-                    
-                    prev_mid = (prev_high + prev_low) / 2
-                    curr_mid = (curr_high + curr_low) / 2
-                    
-                    if prev_mid > 0:
-                        pct_change = ((curr_mid - prev_mid) / prev_mid) * 100
-                        changes.append(pct_change)
-                
-                if len(changes) < 20:
-                    cls._volatility_cache[item_id] = None
-                    return None
-                
-                # Return standard deviation
-                vol = stdev(changes)
-                cls._volatility_cache[item_id] = vol
-                return vol
-                
-        except Exception as e:
-            logger.error(f"Error calculating volatility for item {item_id}: {e}")
-            return None
     
     @classmethod
     def _check_price_stability(
@@ -478,20 +416,15 @@ class DataQualityService:
         return enriched_items
 
     @classmethod
-    def get_historical_volatility(cls, item_id: int) -> Optional[float]:
-        """Get the cached 7-day volatility for an item."""
-        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
-            return cls._volatility_cache.get(item_id)
-        # Fallback if cache is missed
-        return cls._calculate_historical_volatility(item_id)
-
-    @classmethod
-    def _calculate_trajectory_on_the_fly(cls, item_id: int) -> Optional[float]:
-        """Calculate trajectory on the fly (bypass cache)"""
+    def _recalculate_single_item_metrics(cls, item_id: int):
+        """Recalculate all historical metrics for a single item and cache them."""
         try:
+            month_ago = datetime.now(timezone.utc) - timedelta(days=30)
+            day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+            upper_bound = day_ago + timedelta(hours=2)
+            
             with get_db() as conn:
                 cursor = conn.cursor()
-                month_ago = datetime.now(timezone.utc) - timedelta(days=30)
                 cursor.execute('''
                     SELECT timestamp, price_high, price_low
                     FROM price_history
@@ -499,11 +432,100 @@ class DataQualityService:
                     AND timestamp >= ?
                     ORDER BY timestamp ASC
                 ''', (item_id, month_ago))
-                rows = [dict(row) for row in cursor.fetchall()]
-                return cls._calculate_trend_trajectory(rows)
+                rows = cursor.fetchall()
+                
+                vol = None
+                traj = None
+                max_drawdown = None
+                percentile = None
+                crash_risk = None
+                
+                if len(rows) >= 24:
+                    midpoints = []
+                    changes = []
+                    for i, r in enumerate(rows):
+                        if r['price_high'] is not None and r['price_low'] is not None:
+                            mid = (r['price_high'] + r['price_low']) / 2.0
+                            if mid > 0:
+                                midpoints.append(mid)
+                                if i > 0:
+                                    prev_high = rows[i-1]['price_high']
+                                    prev_low = rows[i-1]['price_low']
+                                    if prev_high is not None and prev_low is not None:
+                                        prev_mid = (prev_high + prev_low) / 2.0
+                                        if prev_mid > 0:
+                                            changes.append(((mid - prev_mid) / prev_mid) * 100.0)
+                    
+                    if len(changes) >= 20:
+                        vol = stdev(changes)
+                    
+                    traj = cls._calculate_trend_trajectory(rows)
+                    
+                    if len(midpoints) >= 24:
+                        # Drawdown
+                        peak = -1.0
+                        max_dd = 0.0
+                        for mid in midpoints:
+                            if mid > peak:
+                                peak = mid
+                            elif peak > 0:
+                                dd = (peak - mid) / peak
+                                if dd > max_dd:
+                                    max_dd = dd
+                        max_drawdown = max_dd * 100.0
+                        
+                        # Percentile
+                        current_mid = midpoints[-1]
+                        min_price = min(midpoints)
+                        max_price = max(midpoints)
+                        if max_price > min_price:
+                            percentile = ((current_mid - min_price) / (max_price - min_price)) * 100.0
+                        else:
+                            percentile = 50.0
+                            
+                        # Crash Risk
+                        drawdown_comp = min(100.0, max_drawdown * 2.0)
+                        percentile_comp = percentile
+                        volatility_comp = min(100.0, vol * 20.0) if vol is not None else 50.0
+                        crash_risk = min(100.0, max(0.0, (drawdown_comp * 0.40) + (percentile_comp * 0.40) + (volatility_comp * 0.20)))
+
+                cls._volatility_cache[item_id] = vol
+                cls._trajectory_cache[item_id] = traj
+                cls._drawdown_cache[item_id] = max_drawdown
+                cls._percentile_cache[item_id] = percentile
+                cls._crash_risk_cache[item_id] = crash_risk
+                
+                if item_id not in cls._stability_cache:
+                    cursor.execute('''
+                        SELECT price_high, price_low
+                        FROM price_history
+                        WHERE item_id = ?
+                        AND timestamp >= ?
+                        AND timestamp <= ?
+                        ORDER BY timestamp ASC
+                        LIMIT 10
+                    ''', (item_id, day_ago, upper_bound))
+                    hist_rows = cursor.fetchall()
+                    if len(hist_rows) >= 5:
+                        hist_mids = [(r['price_high'] + r['price_low'])/2 for r in hist_rows if r['price_high'] is not None and r['price_low'] is not None]
+                        if len(hist_mids) >= 5:
+                            cls._stability_cache[item_id] = mean(hist_mids)
+                        else:
+                            cls._stability_cache[item_id] = None
+                    else:
+                        cls._stability_cache[item_id] = None
+
         except Exception as e:
-            logger.error(f"Error calculating trajectory on the fly for item {item_id}: {e}")
-            return None
+            logger.error(f"Error recalculating metrics on the fly for item {item_id}: {e}", exc_info=True)
+
+    @classmethod
+    def get_historical_volatility(cls, item_id: int) -> Optional[float]:
+        """Get the cached 7-day volatility for an item."""
+        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
+            if item_id in cls._volatility_cache:
+                return cls._volatility_cache[item_id]
+        cls._recalculate_single_item_metrics(item_id)
+        return cls._volatility_cache.get(item_id)
 
     @classmethod
     def get_historical_trajectory(cls, item_id: int) -> Optional[float]:
@@ -511,8 +533,35 @@ class DataQualityService:
         if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
             if item_id in cls._trajectory_cache:
                 return cls._trajectory_cache[item_id]
-        # Fallback if cache is missed
-        return cls._calculate_trajectory_on_the_fly(item_id)
+        cls._recalculate_single_item_metrics(item_id)
+        return cls._trajectory_cache.get(item_id)
+
+    @classmethod
+    def get_historical_drawdown(cls, item_id: int) -> Optional[float]:
+        """Get the cached 30-day max drawdown percentage for an item."""
+        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
+            if item_id in cls._drawdown_cache:
+                return cls._drawdown_cache[item_id]
+        cls._recalculate_single_item_metrics(item_id)
+        return cls._drawdown_cache.get(item_id)
+
+    @classmethod
+    def get_historical_percentile(cls, item_id: int) -> Optional[float]:
+        """Get the cached 30-day price percentile for an item."""
+        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
+            if item_id in cls._percentile_cache:
+                return cls._percentile_cache[item_id]
+        cls._recalculate_single_item_metrics(item_id)
+        return cls._percentile_cache.get(item_id)
+
+    @classmethod
+    def get_historical_crash_risk(cls, item_id: int) -> Optional[float]:
+        """Get the cached crash risk score (0-100) for an item."""
+        if cls._cache_timestamp and (datetime.now(timezone.utc) - cls._cache_timestamp).total_seconds() < cls.CACHE_TTL_HOURS * 3600:
+            if item_id in cls._crash_risk_cache:
+                return cls._crash_risk_cache[item_id]
+        cls._recalculate_single_item_metrics(item_id)
+        return cls._crash_risk_cache.get(item_id)
 
     @classmethod
     def prewarm_cache(cls):
@@ -529,6 +578,9 @@ class DataQualityService:
             new_volatility = {}
             new_stability = {}
             new_trajectory = {}
+            new_drawdown = {}
+            new_percentile = {}
+            new_crash_risk = {}
             
             day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
             upper_bound = day_ago + timedelta(hours=2)
@@ -539,7 +591,7 @@ class DataQualityService:
                 for item in items:
                     item_id = item['id']
                     
-                    # 1. Precalculate Volatility and Trajectory (using 30 days)
+                    # 1. Precalculate Volatility, Trajectory, Drawdown, Percentile, Crash Risk (using 30 days)
                     cursor.execute('''
                         SELECT timestamp, price_high, price_low
                         FROM price_history
@@ -549,31 +601,65 @@ class DataQualityService:
                     ''', (item_id, month_ago))
                     rows = cursor.fetchall()
                     if len(rows) >= 24:
+                        midpoints = []
                         changes = []
-                        for i in range(1, len(rows)):
-                            prev_high = rows[i-1]['price_high']
-                            prev_low = rows[i-1]['price_low']
+                        for i in range(len(rows)):
                             curr_high = rows[i]['price_high']
                             curr_low = rows[i]['price_low']
                             
-                            if prev_high is None or prev_low is None or curr_high is None or curr_low is None:
-                                continue
-                            
-                            prev_mid = (prev_high + prev_low) / 2
-                            curr_mid = (curr_high + curr_low) / 2
-                            
-                            if prev_mid > 0:
-                                pct_change = ((curr_mid - prev_mid) / prev_mid) * 100
-                                changes.append(pct_change)
+                            if curr_high is not None and curr_low is not None:
+                                curr_mid = (curr_high + curr_low) / 2.0
+                                if curr_mid > 0:
+                                    midpoints.append(curr_mid)
+                                    
+                                    if i > 0:
+                                        prev_high = rows[i-1]['price_high']
+                                        prev_low = rows[i-1]['price_low']
+                                        if prev_high is not None and prev_low is not None:
+                                            prev_mid = (prev_high + prev_low) / 2.0
+                                            if prev_mid > 0:
+                                                pct_change = ((curr_mid - prev_mid) / prev_mid) * 100
+                                                changes.append(pct_change)
                         
-                        
+                        vol = None
                         if len(changes) >= 20:
-                            new_volatility[item_id] = stdev(changes)
+                            vol = stdev(changes)
+                            new_volatility[item_id] = vol
                             
-                        # Calculate Trajectory using Linear Regression
                         traj = cls._calculate_trend_trajectory(rows)
                         if traj is not None:
                             new_trajectory[item_id] = traj
+                            
+                        if len(midpoints) >= 24:
+                            # Calculate Max Drawdown
+                            peak = -1.0
+                            max_dd = 0.0
+                            for mid in midpoints:
+                                if mid > peak:
+                                    peak = mid
+                                elif peak > 0:
+                                    dd = (peak - mid) / peak
+                                    if dd > max_dd:
+                                        max_dd = dd
+                            max_drawdown = max_dd * 100.0
+                            new_drawdown[item_id] = max_drawdown
+                            
+                            # Calculate Price Percentile
+                            current_mid = midpoints[-1]
+                            min_price = min(midpoints)
+                            max_price = max(midpoints)
+                            if max_price > min_price:
+                                price_percentile = ((current_mid - min_price) / (max_price - min_price)) * 100.0
+                            else:
+                                price_percentile = 50.0
+                            new_percentile[item_id] = price_percentile
+                            
+                            # Calculate Crash Risk Score
+                            drawdown_comp = min(100.0, max_drawdown * 2.0)
+                            percentile_comp = price_percentile
+                            volatility_comp = min(100.0, vol * 20.0) if vol is not None else 50.0
+                            crash_risk = min(100.0, max(0.0, (drawdown_comp * 0.40) + (percentile_comp * 0.40) + (volatility_comp * 0.20)))
+                            new_crash_risk[item_id] = crash_risk
                     
                     # 2. Precalculate Stability Baseline
                     cursor.execute('''
@@ -596,9 +682,12 @@ class DataQualityService:
             cls._volatility_cache = new_volatility
             cls._stability_cache = new_stability
             cls._trajectory_cache = new_trajectory
+            cls._drawdown_cache = new_drawdown
+            cls._percentile_cache = new_percentile
+            cls._crash_risk_cache = new_crash_risk
             cls._cache_timestamp = datetime.now(timezone.utc)
             
-            logger.info(f"✅ DataQualityService cache pre-warmed. Volatility: {len(new_volatility)} items, Stability: {len(new_stability)} items, Trajectory: {len(new_trajectory)} items.")
+            logger.info(f"✅ DataQualityService cache pre-warmed. Volatility: {len(new_volatility)} items, Stability: {len(new_stability)} items, Trajectory: {len(new_trajectory)} items, Drawdown: {len(new_drawdown)} items, Percentile: {len(new_percentile)} items, Crash Risk: {len(new_crash_risk)} items.")
             
         except Exception as e:
             logger.error(f"Failed to pre-warm DataQualityService cache: {e}", exc_info=True)

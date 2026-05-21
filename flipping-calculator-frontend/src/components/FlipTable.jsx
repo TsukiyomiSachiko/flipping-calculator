@@ -78,6 +78,23 @@ const FlipTable = React.memo(function FlipTable({ flips, onSelectFlip, onShowDet
                     } />
                     <MobileField label="GE Limit" value={item.ge_limit?.toLocaleString() || 'N/A'} />
                     <MobileField label="Score" value={`${item.score ?? '—'} / 100`} color={scoreColor} />
+                    <MobileField label="Risk-Adj Score" value={item.risk_adjusted_score != null ? `${item.risk_adjusted_score.toFixed(1)} / 100` : '—'} color={
+                      item.risk_adjusted_score >= 70 ? 'text-osrs-green' :
+                      item.risk_adjusted_score >= 45 ? 'text-yellow-400' :
+                      item.risk_adjusted_score >= 25 ? 'text-orange-400' : 'text-gray-400'
+                    } />
+                    <MobileField label="Crash Risk" value={item.crash_risk_score != null ? `${item.crash_risk_score.toFixed(0)} / 100` : '—'} color={
+                      item.crash_risk_score == null ? 'text-gray-500' :
+                      item.crash_risk_score < 35 ? 'text-osrs-green' :
+                      item.crash_risk_score <= 70 ? 'text-yellow-400' : 'text-osrs-red'
+                    } />
+                    <MobileField label="Max Drawdown (30d)" value={item.max_drawdown_30d != null ? `${item.max_drawdown_30d.toFixed(1)}%` : '—'} color="text-osrs-red" />
+                    <MobileField label="Price Percentile" value={item.price_percentile_30d != null ? `${item.price_percentile_30d.toFixed(1)}%` : '—'} />
+                    <MobileField label="Risk-to-Reward" value={item.risk_to_reward_ratio != null ? `${item.risk_to_reward_ratio.toFixed(2)}x` : '—'} color={
+                      item.risk_to_reward_ratio == null ? 'text-gray-500' :
+                      item.risk_to_reward_ratio > 3 ? 'text-osrs-red' :
+                      item.risk_to_reward_ratio > 1.5 ? 'text-yellow-400' : 'text-osrs-green'
+                    } />
                     <MobileField label="Your Profit" value={formatGP(item.your_profit)} color="text-osrs-green" />
                     <MobileField label="Max Qty" value={item.max_qty?.toLocaleString() || 'N/A'} />
                     <MobileField label="Members" value={item.members ? '⭐ Members' : 'F2P'} />
@@ -218,6 +235,31 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
                        score >= 45 ? 'text-yellow-400' :
                        score >= 25 ? 'text-orange-400' : 'text-gray-400';
           return <span className={`font-bold ${color}`}>{score ?? '—'}</span>;
+        },
+      },
+      {
+        header: 'Risk-Adj Score',
+        accessorKey: 'risk_adjusted_score',
+        cell: ({ getValue }) => {
+          const val = getValue();
+          if (val == null) return <span className="text-gray-500">—</span>;
+          const color = val >= 70 ? 'text-osrs-green' :
+                        val >= 45 ? 'text-yellow-400' :
+                        val >= 25 ? 'text-orange-400' : 'text-gray-400';
+          return <span className={`font-bold ${color}`}>{val.toFixed(1)}</span>;
+        },
+      },
+      {
+        header: 'Risk Profile',
+        accessorKey: 'crash_risk_score',
+        cell: ({ getValue }) => {
+          const val = getValue();
+          if (val == null) return <span className="text-gray-500">—</span>;
+          const color = val < 35 ? 'text-osrs-green' :
+                        val <= 70 ? 'text-yellow-400' : 'text-osrs-red';
+          const label = val < 35 ? 'Low' :
+                        val <= 70 ? 'Medium' : 'High';
+          return <span className={`font-bold ${color}`} title={`Crash Risk Score: ${val.toFixed(1)}`}>{label} ({val.toFixed(0)})</span>;
         },
       },
       {
@@ -362,6 +404,42 @@ const DesktopTable = React.memo(function DesktopTable({ flips, expandedRows, tog
                             item.score >= 45 ? 'text-yellow-400' :
                             item.score >= 25 ? 'text-orange-400' : 'text-gray-400'
                           }`}>{item.score ?? '—'} / 100</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Risk-Adj Score</p>
+                          <p className={`font-bold ${
+                            item.risk_adjusted_score >= 70 ? 'text-osrs-green' :
+                            item.risk_adjusted_score >= 45 ? 'text-yellow-400' :
+                            item.risk_adjusted_score >= 25 ? 'text-orange-400' : 'text-gray-400'
+                          }`}>{item.risk_adjusted_score != null ? `${item.risk_adjusted_score.toFixed(1)} / 100` : '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Crash Risk Score</p>
+                          <p className={`font-bold ${
+                            item.crash_risk_score == null ? 'text-gray-500' :
+                            item.crash_risk_score < 35 ? 'text-osrs-green' :
+                            item.crash_risk_score <= 70 ? 'text-yellow-400' : 'text-osrs-red'
+                          }`}>{item.crash_risk_score != null ? `${item.crash_risk_score.toFixed(0)} / 100` : '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Max Drawdown (30d)</p>
+                          <p className="font-medium text-osrs-red">
+                            {item.max_drawdown_30d != null ? `${item.max_drawdown_30d.toFixed(1)}%` : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Price Percentile (30d)</p>
+                          <p className="font-medium">
+                            {item.price_percentile_30d != null ? `${item.price_percentile_30d.toFixed(1)}%` : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">Risk-to-Reward</p>
+                          <p className={`font-medium ${
+                            item.risk_to_reward_ratio == null ? 'text-gray-500' :
+                            item.risk_to_reward_ratio > 3 ? 'text-osrs-red' :
+                            item.risk_to_reward_ratio > 1.5 ? 'text-yellow-400' : 'text-osrs-green'
+                          }`}>{item.risk_to_reward_ratio != null ? `${item.risk_to_reward_ratio.toFixed(2)}x` : '—'}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-400 mb-1">Erebus Score</p>

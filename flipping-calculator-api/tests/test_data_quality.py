@@ -142,6 +142,9 @@ def test_prewarm_cache(mock_get_all, mock_get_db):
     DataQualityService._volatility_cache = {}
     DataQualityService._stability_cache = {}
     DataQualityService._trajectory_cache = {}
+    DataQualityService._drawdown_cache = {}
+    DataQualityService._percentile_cache = {}
+    DataQualityService._crash_risk_cache = {}
     DataQualityService._cache_timestamp = None
     
     # Trigger prewarm
@@ -152,4 +155,72 @@ def test_prewarm_cache(mock_get_all, mock_get_db):
     assert 4151 in DataQualityService._stability_cache
     assert DataQualityService._stability_cache[4151] == 1039.0
     assert 4151 in DataQualityService._trajectory_cache
+    assert 4151 in DataQualityService._drawdown_cache
+    assert DataQualityService._drawdown_cache[4151] is not None
+    assert 4151 in DataQualityService._percentile_cache
+    assert DataQualityService._percentile_cache[4151] is not None
+    assert 4151 in DataQualityService._crash_risk_cache
+    assert DataQualityService._crash_risk_cache[4151] is not None
     assert DataQualityService._cache_timestamp is not None
+
+@patch("app.services.data_quality_service.get_db")
+def test_recalculate_single_item_metrics(mock_get_db):
+    # Mock DB cursor/results
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_get_db.return_value.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+    
+    # 30 days of price history
+    # 24 flat at 1000 (high: 1010, low: 990 -> mid 1000)
+    # 1 peak at 1200 (high: 1210, low: 1190)
+    # 1 trough at 900 (high: 910, low: 890)
+    # 4 flat/recovery at 1000 (high: 1010, low: 990)
+    history_rows = []
+    base_time = datetime.now(timezone.utc) - timedelta(days=30)
+    
+    # 24 flat points
+    for i in range(24):
+        history_rows.append({
+            "timestamp": base_time + timedelta(days=i),
+            "price_high": 1010,
+            "price_low": 990
+        })
+    # Peak
+    history_rows.append({
+        "timestamp": base_time + timedelta(days=24),
+        "price_high": 1210,
+        "price_low": 1190
+    })
+    # Trough
+    history_rows.append({
+        "timestamp": base_time + timedelta(days=25),
+        "price_high": 910,
+        "price_low": 890
+    })
+    # Current/Recovery
+    for i in range(26, 30):
+        history_rows.append({
+            "timestamp": base_time + timedelta(days=i),
+            "price_high": 1010,
+            "price_low": 990
+        })
+        
+    mock_cursor.fetchall.side_effect = [history_rows]
+    
+    # Reset caches
+    DataQualityService._volatility_cache = {}
+    DataQualityService._drawdown_cache = {}
+    DataQualityService._percentile_cache = {}
+    DataQualityService._crash_risk_cache = {}
+    DataQualityService._stability_cache = {}
+    DataQualityService._cache_timestamp = None
+    
+    # Recalculate
+    DataQualityService._recalculate_single_item_metrics(4151)
+    
+    # Assert
+    assert DataQualityService._drawdown_cache[4151] == 25.0
+    assert abs(DataQualityService._percentile_cache[4151] - 33.333) < 0.01
+    assert DataQualityService._crash_risk_cache[4151] is not None
+    assert DataQualityService._crash_risk_cache[4151] > 0
