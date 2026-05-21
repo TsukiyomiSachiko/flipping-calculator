@@ -125,6 +125,15 @@ export default function ItemDetailModal({ item, onClose }) {
                     }
                   />
                   <DataCard
+                    label="Risk-Adj Score"
+                    value={displayItem.risk_adjusted_score != null ? `${displayItem.risk_adjusted_score.toFixed(1)} / 100` : '—'}
+                    color={
+                      displayItem.risk_adjusted_score >= 70 ? 'text-osrs-green' :
+                      displayItem.risk_adjusted_score >= 45 ? 'text-yellow-400' :
+                      displayItem.risk_adjusted_score >= 25 ? 'text-orange-400' : 'text-gray-400'
+                    }
+                  />
+                  <DataCard
                     label="Erebus Score"
                     value={displayItem.secondary_score != null ? displayItem.secondary_score : '—'}
                     color={
@@ -134,6 +143,47 @@ export default function ItemDetailModal({ item, onClose }) {
                       displayItem.secondary_score >= 5 ? 'text-yellow-400' : 'text-gray-400'
                     }
                   />
+                </div>
+
+                {/* Crash Risk Assessment */}
+                <div className="mt-4 border-t border-gray-700 pt-4">
+                  <h3 className="text-sm font-semibold text-osrs-gold mb-3 flex items-center gap-1.5">
+                    <span>🛡️</span> Crash Risk Assessment
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <DataCard
+                      label="Crash Risk Score"
+                      value={displayItem.crash_risk_score != null ? `${displayItem.crash_risk_score.toFixed(0)} / 100` : '—'}
+                      color={
+                        displayItem.crash_risk_score == null ? 'text-gray-400' :
+                        displayItem.crash_risk_score < 35 ? 'text-osrs-green' :
+                        displayItem.crash_risk_score <= 70 ? 'text-yellow-400' : 'text-osrs-red'
+                      }
+                    />
+                    <DataCard
+                      label="Max Drawdown (30d)"
+                      value={displayItem.max_drawdown_30d != null ? `${displayItem.max_drawdown_30d.toFixed(1)}%` : '—'}
+                      color="text-osrs-red"
+                    />
+                    <DataCard
+                      label="Price Percentile (30d)"
+                      value={displayItem.price_percentile_30d != null ? `${displayItem.price_percentile_30d.toFixed(1)}%` : '—'}
+                      color={
+                        displayItem.price_percentile_30d == null ? 'text-gray-400' :
+                        displayItem.price_percentile_30d > 75 ? 'text-osrs-red' :
+                        displayItem.price_percentile_30d > 40 ? 'text-yellow-400' : 'text-osrs-green'
+                      }
+                    />
+                    <DataCard
+                      label="Risk-to-Reward Ratio"
+                      value={displayItem.risk_to_reward_ratio != null ? `${displayItem.risk_to_reward_ratio.toFixed(2)}x` : '—'}
+                      color={
+                        displayItem.risk_to_reward_ratio == null ? 'text-gray-400' :
+                        displayItem.risk_to_reward_ratio > 3 ? 'text-osrs-red' :
+                        displayItem.risk_to_reward_ratio > 1.5 ? 'text-yellow-400' : 'text-osrs-green'
+                      }
+                    />
+                  </div>
                 </div>
 
                 {/* Long-Term Flipping Stats (7-Day Projection) */}

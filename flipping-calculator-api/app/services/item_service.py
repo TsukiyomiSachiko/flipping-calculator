@@ -482,6 +482,13 @@ class ItemService:
         from app.services.data_quality_service import DataQualityService
         trajectory = DataQualityService.get_historical_trajectory(item_id)
         volatility = DataQualityService.get_historical_volatility(item_id)
+        max_drawdown_30d = DataQualityService.get_historical_drawdown(item_id)
+        price_percentile_30d = DataQualityService.get_historical_percentile(item_id)
+        crash_risk_score = DataQualityService.get_historical_crash_risk(item_id)
+
+        risk_to_reward_ratio = None
+        if max_drawdown_30d is not None and roi is not None:
+            risk_to_reward_ratio = round(max_drawdown_30d / roi, 2) if roi > 0 else 99.9
 
         expected_profit_7d = None
         expected_roi_7d = None
@@ -517,6 +524,16 @@ class ItemService:
         if highalch_value > 0 and buy_price is not None:
             highalch_profit = highalch_value - (buy_price + nat_rune_price)
 
+        score = ItemService.calculate_score(
+            profit=profit, roi=roi, volume=volume,
+            ge_limit=ge_limit, buy_price=buy_price or 0, cash=cash,
+            momentum=momentum,
+        )
+
+        risk_adjusted_score = score
+        if crash_risk_score is not None:
+            risk_adjusted_score = max(0.0, score - crash_risk_score * 0.35)
+
         return {
             "id": item['id'],
             "name": item['name'],
@@ -535,11 +552,12 @@ class ItemService:
             "profit_at_limit": profit_at_limit,
             "max_qty": max_qty,
             "your_profit": your_profit,
-            "score": ItemService.calculate_score(
-                profit=profit, roi=roi, volume=volume,
-                ge_limit=ge_limit, buy_price=buy_price or 0, cash=cash,
-                momentum=momentum,
-            ),
+            "score": score,
+            "risk_adjusted_score": risk_adjusted_score,
+            "crash_risk_score": crash_risk_score,
+            "max_drawdown_30d": max_drawdown_30d,
+            "price_percentile_30d": price_percentile_30d,
+            "risk_to_reward_ratio": risk_to_reward_ratio,
             "secondary_score": ItemService.calculate_erebus_score(
                 buy_price=buy_price or 0,
                 sell_price=sell_price or 0,
