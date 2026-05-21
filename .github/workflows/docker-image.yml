@@ -20,6 +20,10 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './flipping-calculator-frontend/package-lock.json'
         
+    - name: Test Token Access
+      run: |
+        curl -i -H "Authorization: token ${{ secrets.THEME_REPO_PAT }}" https://api.github.com/repos/TsukiyomiSachiko/TsukiTheme
+        
     - name: Configure Git for Private Repo Access
       run: |
         git config --global url."https://x-access-token:${{ secrets.THEME_REPO_PAT }}@github.com/".insteadOf "https://github.com/"
