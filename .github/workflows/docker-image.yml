@@ -20,7 +20,10 @@ jobs:
         cache-dependency-path: './flipping-calculator-frontend/package-lock.json'
         
     - name: Configure Git for Private Repo Access
-      run: git config --global url."https://${{ secrets.THEME_REPO_PAT }}@github.com/".insteadOf "https://github.com/"
+      run: |
+        git config --global url."https://${{ secrets.THEME_REPO_PAT }}@github.com/".insteadOf "https://github.com/"
+        git config --global url."https://${{ secrets.THEME_REPO_PAT }}@github.com/".insteadOf "git@github.com:"
+        git config --global url."https://${{ secrets.THEME_REPO_PAT }}@github.com/".insteadOf "ssh://git@github.com/"
       
     - name: Install dependencies
       run: npm ci
