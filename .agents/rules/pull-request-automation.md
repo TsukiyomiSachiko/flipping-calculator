@@ -19,3 +19,6 @@ Run the following command in WSL:
 ```bash
 wsl gh pr create --base main --head $(wsl git branch --show-current) --title "<title>" --body "<body>"
 ```
+
+## Never Do
+Merge pull requests on your own without specific instruction to merge it
