@@ -12,6 +12,7 @@ Before running this automation:
 1. Ensure all changes are committed and pushed to the current remote branch.
 2. Confirm that the entire test suite (e.g., `pytest`) passes without errors.
 3. Verify that the current branch is up-to-date with `main`.
+4. When attempting to update a pull request, verify it exists first
 
 ## Instruction
 When all pre-conditions are met, automatically create a Pull Request to the `main` branch using the GitHub CLI (`gh`).
