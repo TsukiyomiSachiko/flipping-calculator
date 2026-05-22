@@ -35,7 +35,16 @@ export default function MarketAlertMonitor() {
   
   // Track already-alerted flips in the session to avoid spamming the user
   // Map key: flipId -> value: lastAlertedPrice
-  const alertedFlipsRef = useRef(new Map());
+  const alertedFlipsRef = useRef(null);
+  if (alertedFlipsRef.current === null) {
+    try {
+      const stored = localStorage.getItem('flipping_calculator_alerted_flips');
+      alertedFlipsRef.current = stored ? new Map(JSON.parse(stored)) : new Map();
+    } catch (e) {
+      console.error('Failed to parse alerted flips from localStorage:', e);
+      alertedFlipsRef.current = new Map();
+    }
+  }
 
   // Fetch pending projections using the same query key as the Portfolio page
   const { data: projectionData } = useQuery({
@@ -55,6 +64,7 @@ export default function MarketAlertMonitor() {
 
     const flips = projectionData.flips;
     const newAlerts = [];
+    let hasChanges = false;
 
     flips.forEach((flip) => {
       // We only alert if buy price and current sell (market) price are both available
@@ -81,16 +91,29 @@ export default function MarketAlertMonitor() {
             });
             // Update the record with the price we alerted at
             alertedFlipsRef.current.set(flip.id, flip.current_sell_price);
+            hasChanges = true;
           }
         } else {
           // If the loss is resolved (e.g. price went back up or item is updated),
           // clear it from our record so it can trigger again if it dips in the future.
           if (alertedFlipsRef.current.has(flip.id)) {
             alertedFlipsRef.current.delete(flip.id);
+            hasChanges = true;
           }
         }
       }
     });
+
+    if (hasChanges) {
+      try {
+        localStorage.setItem(
+          'flipping_calculator_alerted_flips',
+          JSON.stringify(Array.from(alertedFlipsRef.current.entries()))
+        );
+      } catch (e) {
+        console.error('Failed to save alerted flips to localStorage:', e);
+      }
+    }
 
     if (newAlerts.length > 0) {
       setActiveAlerts((prev) => {
