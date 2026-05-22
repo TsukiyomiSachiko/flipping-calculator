@@ -45,6 +45,19 @@ export const useAppStore = create(
       // Active view
       activeView: 'flips', // 'flips', 'portfolio', 'history'
       setActiveView: (view) => set({ activeView: view }),
+
+      // Alert settings
+      alertSettings: {
+        enableAlerts: true,
+        lossThresholdPct: 10,
+        enableSound: true,
+        enableTabFlashing: true,
+        enableInAppModal: true,
+        alertPollInterval: 60,
+      },
+      setAlertSettings: (settings) => set((state) => ({
+        alertSettings: { ...state.alertSettings, ...settings }
+      })),
     }),
     {
       name: 'flipping-calculator-storage',

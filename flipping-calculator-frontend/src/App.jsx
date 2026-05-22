@@ -10,6 +10,7 @@ import LoginView from './pages/LoginView';
 import ConfirmModal from './components/ConfirmModal';
 import { useAppStore } from './stores/appStore';
 import { useItemSync } from './hooks/useApi';
+import MarketAlertMonitor from './components/MarketAlertMonitor';
 
 function App() {
   const { activeView, currentAccount, token } = useAppStore();
@@ -48,6 +49,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-luxury-dark text-gray-200 font-outfit relative overflow-hidden flex flex-col justify-between">
+      <MarketAlertMonitor />
       {/* Floating Luxurious Background Auroras */}
       <div className="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] rounded-full bg-luxury-purple/10 blur-[130px] pointer-events-none animate-float-slow" />
       <div className="absolute bottom-[-150px] right-[-150px] w-[500px] h-[500px] rounded-full bg-luxury-gold/5 blur-[130px] pointer-events-none animate-float-delayed" />
