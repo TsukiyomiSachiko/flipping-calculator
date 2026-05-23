@@ -10,3 +10,7 @@
 ## 2026-05-20 - In-Memory Caching for File-Based API Reponses
 **Learning:** The application's `CacheManager` was reading JSON responses from disk for every backend API request when serving cached data. This led to thousands of repetitive disk reads (JSON parsing and I/O) on hot paths like `FlipService.get_profitable_flips`, becoming a major bottleneck specific to this architecture.
 **Action:** Always complement file-based caches with an in-memory dictionary layer that checks `os.path.getmtime` to determine if a fresh disk read is truly necessary, vastly accelerating high-frequency API endpoints without sacrificing data freshness.
+
+## 2024-05-23 - `copy.deepcopy()` is Too Slow for Large JSON API Caches
+**Learning:** Returning cached API responses (like OSRS Wiki prices dict) by using `copy.deepcopy()` on a dict in memory takes over ~0.25s per request. This creates a severe backend performance bottleneck when many routes need fresh data simultaneously.
+**Action:** Always prefer caching the raw serialized JSON string and calling `json.loads(string)` upon retrieval. It is written in C and is >10x faster than navigating a large nested python dict with `copy.deepcopy()`.

@@ -170,7 +170,7 @@ def upgrade() -> None:
             id {pk_type},
             conversion_id INTEGER NOT NULL,
             item_id INTEGER NOT NULL,
-            quantity Sa.Numeric NOT NULL DEFAULT 1,
+            quantity NUMERIC NOT NULL DEFAULT 1,
             is_input BOOLEAN NOT NULL,
             FOREIGN KEY (conversion_id) REFERENCES item_conversions(id)
         )
